@@ -429,6 +429,7 @@
     { url: 'https://open.er-api.com/v6/latest/EUR', map: d => d?.rates?.HUF }
   ];
   const GUIDE_URL = "https://discord.com/channels/1352389902033096724/1400422649502502953/1420467090929750128";
+  const REGISTER_FALLBACK_URL = "https://www.betano.com";
   const POPUP_AUTO_DISMISS_MS = 7500;
   const I18N = {
     hu: {
@@ -667,7 +668,7 @@
     const n = Number(valueHuf) || 0;
     return n < 10000 ? 50 : 100;
   }
-  function localStepInLocalCurrency(mode, currentHufValue){
+  function getLocalCurrencyStep(mode, currentHufValue){
     if (mode === 'RSD') return 10;
     if (mode === 'RON') {
       const rate = localRateForMode(mode) || 1;
@@ -677,11 +678,11 @@
     return 1;
   }
   function localStepInHUF(mode, currentHufValue){
-    return localRateForMode(mode) * localStepInLocalCurrency(mode, currentHufValue);
+    return localRateForMode(mode) * getLocalCurrencyStep(mode, currentHufValue);
   }
   function stepForMode(mode, currentHufValue){
     if (mode === 'EUR') return 0.1;
-    if (isLocalMode(mode)) return localStepInLocalCurrency(mode, currentHufValue);
+    if (isLocalMode(mode)) return getLocalCurrencyStep(mode, currentHufValue);
     return stepForHUF(currentHufValue);
   }
   async function refreshEurRate(){
@@ -693,7 +694,9 @@
         const res = await fetch(src.url, { signal: controller.signal, cache: 'no-store' });
         if (!res.ok) continue;
         const data = await res.json();
-        const next = Number(src.map(data));
+        const raw = src.map(data);
+        if (raw == null) continue;
+        const next = Number(raw);
         if (Number.isFinite(next) && next > MIN_VALID_EUR_RATE && next < MAX_VALID_EUR_RATE) {
           eurRate = next;
           if (stake1Input && stake2Input) {
@@ -1303,8 +1306,8 @@
     guide.href = GUIDE_URL;
 
     const openHelp = () => {
-      const firstBookLink = document.querySelector('#bookmakerButtons a.book-link, #bookmakerButtons a');
-      register.href = firstBookLink?.href || GUIDE_URL;
+      const firstBookLink = document.querySelector('#bookmakerButtons a');
+      register.href = firstBookLink?.href || REGISTER_FALLBACK_URL;
       backdrop.hidden = false; modal.hidden = false;
       requestAnimationFrame(()=>{ backdrop.classList.add('show'); modal.classList.add('show'); });
     };
