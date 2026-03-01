@@ -186,6 +186,16 @@
   }
   .settings-btn:hover{ box-shadow: 0 6px 16px rgba(0,0,0,.35); }
   .settings-btn img{ width:22px; height:22px; display:block; }
+  .help-btn{
+    position:absolute; top:12px; right:12px;
+    width:36px; height:36px; border-radius:999px; padding:0;
+    border:1px solid rgba(255,255,255,.12);
+    background: rgba(34,40,49,.88); color:#fff; font-weight:800; font-size:20px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,.25);
+    z-index: 3;
+  }
+  .help-btn:hover{ box-shadow: 0 6px 16px rgba(0,0,0,.35); }
 
   .setting-row{ display:flex; align-items:center; gap:12px; padding:10px 0; }
   .setting-row .lbl{ font-weight:700; color:#e6ffe6; }
@@ -293,6 +303,7 @@
     <button class="settings-btn" id="settingsBtn" aria-label="Beállítások" style="display: none;">
       <img src="123.png" alt="Beállítások">
     </button>
+    <button class="help-btn" id="helpBtn" aria-label="Segítség">?</button>
 
     <!-- Beállítások -->
     <div class="modal-backdrop" id="settingsBackdrop" hidden></div>
@@ -336,6 +347,20 @@
             <div class="desc">Ha az automatikus nyitás nem működik, olvasd el az útmutatót a Discordon.</div>
           </div>
           <a id="guideLink" class="inline-link" href="#" target="_blank" rel="noopener" title="Útmutató">Útmutató</a>
+        </div>
+      </div>
+    </div>
+    <div class="modal-backdrop" id="helpBackdrop" hidden></div>
+    <div class="modal" id="helpModal" hidden>
+      <div class="box">
+        <div class="hdr">
+          <div class="title">Segítség</div>
+          <span class="close-x" id="helpClose">✕</span>
+        </div>
+        <div class="txt">Nincs fiókod az irodákhoz? <a id="helpRegisterLink" class="inline-link" href="#" target="_blank" rel="noopener">Regisztrálj itt</a></div>
+        <div class="txt">Elakadtál vagy nem értesz valamit? Nézd meg a rövid útmutatót.</div>
+        <div class="btns">
+          <a id="helpGuideLink" class="inline-link" href="#" target="_blank" rel="noopener">Útmutató</a>
         </div>
       </div>
     </div>
@@ -399,6 +424,10 @@
   const EXCHANGE_RATE_FETCH_TIMEOUT_MS = 4500;
   const MIN_VALID_EUR_RATE = 200;
   const MAX_VALID_EUR_RATE = 600;
+  const EUR_RATE_SOURCES = [
+    { url: 'https://api.frankfurter.app/latest?from=EUR&to=HUF', map: d => d?.rates?.HUF },
+    { url: 'https://open.er-api.com/v6/latest/EUR', map: d => d?.rates?.HUF }
+  ];
   const GUIDE_URL = "https://discord.com/channels/1352389902033096724/1400422649502502953/1420467090929750128";
   const POPUP_AUTO_DISMISS_MS = 7500;
   const I18N = {
@@ -638,33 +667,48 @@
     const n = Number(valueHuf) || 0;
     return n < 10000 ? 50 : 100;
   }
+  function localStepInLocalCurrency(mode, currentHufValue){
+    if (mode === 'RSD') return 10;
+    if (mode === 'RON') {
+      const rate = localRateForMode(mode) || 1;
+      const currentLocal = (Number(currentHufValue) || 0) / rate;
+      return currentLocal < 200 ? 1 : 5;
+    }
+    return 1;
+  }
+  function localStepInHUF(mode, currentHufValue){
+    return localRateForMode(mode) * localStepInLocalCurrency(mode, currentHufValue);
+  }
   function stepForMode(mode, currentHufValue){
     if (mode === 'EUR') return 0.1;
-    if (isLocalMode(mode)) return 1;
+    if (isLocalMode(mode)) return localStepInLocalCurrency(mode, currentHufValue);
     return stepForHUF(currentHufValue);
   }
   async function refreshEurRate(){
-    let timeout;
-    try {
-      const controller = new AbortController();
-      timeout = setTimeout(() => controller.abort(), EXCHANGE_RATE_FETCH_TIMEOUT_MS);
-      const res = await fetch('https://open.er-api.com/v6/latest/EUR', { signal: controller.signal, cache: 'no-store' });
-      if (!res.ok) return;
-      const data = await res.json();
-      const next = Number(data && data.rates && data.rates.HUF);
-      if (Number.isFinite(next) && next > MIN_VALID_EUR_RATE && next < MAX_VALID_EUR_RATE) {
-        eurRate = next;
-        if (stake1Input && stake2Input) {
-          const odds1 = parseFloat(odds1Field.value.replace(',', '.'));
-          const odds2 = parseFloat(odds2Field.value.replace(',', '.'));
-          updateProfits(odds1, odds2);
-          updateStakeAltDisplays();
+    for (const src of EUR_RATE_SOURCES) {
+      let timeout;
+      try {
+        const controller = new AbortController();
+        timeout = setTimeout(() => controller.abort(), EXCHANGE_RATE_FETCH_TIMEOUT_MS);
+        const res = await fetch(src.url, { signal: controller.signal, cache: 'no-store' });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const next = Number(src.map(data));
+        if (Number.isFinite(next) && next > MIN_VALID_EUR_RATE && next < MAX_VALID_EUR_RATE) {
+          eurRate = next;
+          if (stake1Input && stake2Input) {
+            const odds1 = parseFloat(odds1Field.value.replace(',', '.'));
+            const odds2 = parseFloat(odds2Field.value.replace(',', '.'));
+            updateProfits(odds1, odds2);
+            updateStakeAltDisplays();
+          }
+          return;
         }
+      } catch (err) {
+        console.warn('Failed to refresh EUR rate from source:', src.url, err);
+      } finally {
+        if (timeout) clearTimeout(timeout);
       }
-    } catch (err) {
-      console.warn('Failed to refresh EUR rate:', err);
-    } finally {
-      if (timeout) clearTimeout(timeout);
     }
   }
   function sanitizeUrl(u) {
@@ -896,7 +940,7 @@
   // ==== Kerekítés és léptetés ====
   function roundedPairFrom(source, s1HUF, s2HUF, o1, o2){
     const stepForHufOrRon = (hufValue, mode) => {
-      if (isLocalMode(mode)) return localRateForMode(mode); // egész helyi pénznem HUF-térben
+      if (isLocalMode(mode)) return localStepInHUF(mode, hufValue);
       return stepForHUF(hufValue);
     };
 
@@ -1245,6 +1289,34 @@
 
     toggleAuto.addEventListener('change', ()=>{ localStorage.setItem(LS_KEY_AUTO_OPEN, toggleAuto.checked ? 'true' : 'false'); });
     toggleOpenAll.addEventListener('change', ()=>{ localStorage.setItem(LS_KEY_OPEN_ALL_ON_QUICK, toggleOpenAll.checked ? 'true' : 'false'); });
+  })();
+
+  (function initHelpUI(){
+    const btn = document.getElementById('helpBtn');
+    const modal = document.getElementById('helpModal');
+    const backdrop = document.getElementById('helpBackdrop');
+    const closeX = document.getElementById('helpClose');
+    const guide = document.getElementById('helpGuideLink');
+    const register = document.getElementById('helpRegisterLink');
+    if (!btn || !modal || !backdrop || !closeX || !guide || !register) return;
+
+    guide.href = GUIDE_URL;
+
+    const openHelp = () => {
+      const firstBookLink = document.querySelector('#bookmakerButtons a.book-link, #bookmakerButtons a');
+      register.href = firstBookLink?.href || GUIDE_URL;
+      backdrop.hidden = false; modal.hidden = false;
+      requestAnimationFrame(()=>{ backdrop.classList.add('show'); modal.classList.add('show'); });
+    };
+    const closeHelp = () => {
+      backdrop.classList.remove('show'); modal.classList.remove('show');
+      setTimeout(()=>{ backdrop.hidden = true; modal.hidden = true; }, 180);
+    };
+
+    btn.addEventListener('click', openHelp);
+    closeX.addEventListener('click', closeHelp);
+    backdrop.addEventListener('click', closeHelp);
+    document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') closeHelp(); });
   })();
 
   // Eszköz/nézet detektálás egyszerűsített
