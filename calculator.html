@@ -371,15 +371,15 @@
     <div class="modal help-modal-panel" id="helpModal" hidden>
       <div class="box">
         <div class="hdr">
-          <div class="title">Segítség</div>
+          <div class="title" id="helpTitle">Segítség</div>
           <span class="close-x" id="helpClose">✕</span>
         </div>
         <div class="help-menu">
           <div class="help-row">
-            <div class="lbl">Nincs fiókod az irodákhoz?</div>
+            <div class="lbl" id="helpNoAccount">Nincs fiókod az irodákhoz?</div>
             <a id="helpRegisterLink" class="inline-link" href="#" target="_blank" rel="noopener">Regisztrálj itt</a>
           </div>
-          <div class="help-note">Elakadtál vagy nem értesz valamit? Nézd meg a rövid útmutatót.</div>
+          <div class="help-note" id="helpNote">Elakadtál vagy nem értesz valamit? Nézd meg a rövid útmutatót.</div>
           <div class="btns">
             <a id="helpGuideLink" class="inline-link" href="#" target="_blank" rel="noopener">Útmutató</a>
           </div>
@@ -450,9 +450,14 @@
     { url: 'https://api.frankfurter.app/latest?from=EUR&to=HUF', map: d => d?.rates?.HUF },
     { url: 'https://open.er-api.com/v6/latest/EUR', map: d => d?.rates?.HUF }
   ];
-  const GUIDE_URL = "https://discord.com/channels/1352389902033096724/1400422649502502953/1420467090929750128";
+  const GUIDE_URL_BY_LANG = {
+    hu: "https://arbify-bet.hu/tutorial-hu",
+    rs: "https://arbify-bet.hu/tutorial-sr",
+    ro: "https://arbify-bet.hu/tutorial-ro"
+  };
   const REGISTER_FALLBACK_URL = "https://www.betano.com";
   const POPUP_AUTO_DISMISS_MS = 7500;
+  const getGuideUrl = (lang) => GUIDE_URL_BY_LANG[lang] || GUIDE_URL_BY_LANG[detectLang()] || GUIDE_URL_BY_LANG.hu;
   const I18N = {
     hu: {
       pageTitle: 'Arbitrázs Kalkulátor – Dark Mode',
@@ -467,7 +472,14 @@
       resultIf1: 'Eredmény, ha az 1-es nyer:',
       resultIf2: 'Eredmény, ha a 2-es nyer:',
       resultIfBookWins: 'Eredmény, ha a(z) {book} nyer:',
-      guaranteedProfit: 'Garantált profit:'
+      guaranteedProfit: 'Garantált profit:',
+      helpTitle: 'Segítség',
+      helpNoAccount: 'Nincs fiókod az irodákhoz?',
+      helpRegister: 'Regisztrálj itt',
+      helpNote: 'Elakadtál vagy nem értesz valamit? Nézd meg a rövid útmutatót.',
+      helpGuide: 'Útmutató',
+      popupBlockedTitle: 'Automatikus nyitás blokkolva',
+      popupBlockedText: 'Ha nem működik az automatikus megnyitás, nézd meg a rövid útmutatót.'
     },
     rs: {
       pageTitle: 'Arbitražni Kalkulator – Dark Mode',
@@ -482,7 +494,14 @@
       resultIf1: 'Rezultat ako pobedi 1:',
       resultIf2: 'Rezultat ako pobedi 2:',
       resultIfBookWins: 'Rezultat ako pobedi {book}:',
-      guaranteedProfit: 'Garantovani profit:'
+      guaranteedProfit: 'Garantovani profit:',
+      helpTitle: 'Pomoć',
+      helpNoAccount: 'Nemaš nalog kod kladionica?',
+      helpRegister: 'Registruj se ovde',
+      helpNote: 'Zapeo si ili ti nešto nije jasno? Pogledaj kratko uputstvo.',
+      helpGuide: 'Uputstvo',
+      popupBlockedTitle: 'Automatsko otvaranje je blokirano',
+      popupBlockedText: 'Ako automatsko otvaranje ne radi, pogledaj kratko uputstvo.'
     },
     ro: {
       pageTitle: 'Calculator Arbitraj – Dark Mode',
@@ -497,7 +516,14 @@
       resultIf1: 'Rezultat dacă iese 1:',
       resultIf2: 'Rezultat dacă iese 2:',
       resultIfBookWins: 'Rezultat dacă câștigă {book}:',
-      guaranteedProfit: 'Profit garantat:'
+      guaranteedProfit: 'Profit garantat:',
+      helpTitle: 'Ajutor',
+      helpNoAccount: 'Nu ai cont la casele de pariuri?',
+      helpRegister: 'Înregistrează-te aici',
+      helpNote: 'Te-ai blocat sau nu înțelegi ceva? Vezi ghidul scurt.',
+      helpGuide: 'Ghid',
+      popupBlockedTitle: 'Deschiderea automată este blocată',
+      popupBlockedText: 'Dacă deschiderea automată nu funcționează, vezi ghidul scurt.'
     }
   };
   function detectLang() {
@@ -522,6 +548,18 @@
     if (stakeLabel) stakeLabel.textContent = t('totalStake');
     calcButton.textContent = t('calculate');
     calcButton.setAttribute('aria-label', t('calculateAria'));
+    const helpBtn = document.getElementById('helpBtn');
+    const helpTitle = document.getElementById('helpTitle');
+    const helpNoAccount = document.getElementById('helpNoAccount');
+    const helpRegister = document.getElementById('helpRegisterLink');
+    const helpNote = document.getElementById('helpNote');
+    const helpGuide = document.getElementById('helpGuideLink');
+    if (helpBtn) helpBtn.setAttribute('aria-label', t('helpTitle'));
+    if (helpTitle) helpTitle.textContent = t('helpTitle');
+    if (helpNoAccount) helpNoAccount.textContent = t('helpNoAccount');
+    if (helpRegister) helpRegister.textContent = t('helpRegister');
+    if (helpNote) helpNote.textContent = t('helpNote');
+    if (helpGuide) helpGuide.textContent = t('helpGuide');
   }
 
   // LS kulcsok
@@ -1297,7 +1335,7 @@
       setTimeout(()=>{ backdrop.hidden = true; modal.hidden = true; }, 180);
     };
 
-    if (guideLinkEl) guideLinkEl.href = GUIDE_URL;
+    if (guideLinkEl) guideLinkEl.href = getGuideUrl();
 
     // Betöltés: állapotok
     const savedAuto = (localStorage.getItem(LS_KEY_AUTO_OPEN) || 'false') === 'true';
@@ -1325,7 +1363,7 @@
     const register = document.getElementById('helpRegisterLink');
     if (!btn || !modal || !backdrop || !closeX || !guide || !register) return;
 
-    guide.href = GUIDE_URL;
+    guide.href = getGuideUrl();
 
     const openHelp = () => {
       const firstBookLink = document.querySelector('#bookmakerButtons a');
@@ -1351,6 +1389,10 @@
 
   // Popup – mobilon középre modál, PC-n toast
   function showPopupHint(){
+    const guideUrl = getGuideUrl();
+    const popupTitle = t('popupBlockedTitle');
+    const popupText = t('popupBlockedText');
+    const guideLabel = t('helpGuide');
     if (isMobileView()){
       const backdrop = document.createElement('div');
       backdrop.className = 'modal-backdrop show';
@@ -1360,13 +1402,13 @@
       modal.innerHTML = `
         <div class="box">
           <div class="hdr">
-            <div class="title">Automatikus nyitás blokkolva</div>
+            <div class="title">${popupTitle}</div>
           </div>
           <div class="txt">
-            Ha nem működik az automatikus megnyitás: nézd meg az útmutatót a Discord <b>#fogadási-beállítások</b> csatornában.
+            ${popupText}
           </div>
           <div class="btns">
-            <a class="inline-link" href="${GUIDE_URL}" target="_blank" rel="noopener">Útmutató</a>
+            <a class="inline-link" href="${guideUrl}" target="_blank" rel="noopener">${guideLabel}</a>
           </div>
         </div>
       `;
@@ -1382,10 +1424,10 @@
       const toast = document.createElement('div');
       toast.className = 'calc-toast';
       toast.innerHTML = `
-        <div class="title">Automatikus nyitás blokkolva</div>
-        <div class="txt">Ha nem működik az automatikus megnyitás: nézd meg az útmutatót a Discord <b>#fogadási-beállítások</b> csatornában.</div>
+        <div class="title">${popupTitle}</div>
+        <div class="txt">${popupText}</div>
         <div class="btns">
-          <a class="inline-link" href="${GUIDE_URL}" target="_blank" rel="noopener">Útmutató</a>
+          <a class="inline-link" href="${guideUrl}" target="_blank" rel="noopener">${guideLabel}</a>
         </div>
       `;
       calc.appendChild(toast);
