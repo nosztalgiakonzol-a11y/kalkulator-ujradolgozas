@@ -396,6 +396,9 @@
   let eurRate = 381;
   const leiRate = 75; // 1 LEI ≈ 75 HUF
   const rsdRate = 3.3; // 1 RSD ≈ 3.3 HUF
+  const EXCHANGE_RATE_FETCH_TIMEOUT_MS = 4500;
+  const MIN_VALID_EUR_RATE = 200;
+  const MAX_VALID_EUR_RATE = 600;
   const GUIDE_URL = "https://discord.com/channels/1352389902033096724/1400422649502502953/1420467090929750128";
   const POPUP_AUTO_DISMISS_MS = 7500;
   const I18N = {
@@ -583,9 +586,9 @@
   let isFocusedS1 = false;
   let isFocusedS2 = false;
 
-  const localModeForLang = () => (currentLang === 'ro' ? 'LEI' : (currentLang === 'rs' ? 'RSD' : 'HUF'));
+  const localModeForLang = () => (currentLang === 'ro' ? 'LEI' : (currentLang === 'rs' ? 'RSD' : 'HUF')); // hu/default -> HUF
   const isLocalMode = m => (m === 'LEI' || m === 'RSD');
-  const localRateForMode = m => (m === 'LEI' ? leiRate : (m === 'RSD' ? rsdRate : null));
+  const localRateForMode = m => (m === 'LEI' ? leiRate : (m === 'RSD' ? rsdRate : 1));
   const labelFor = m => (m === 'EUR' ? 'EUR' : (m === 'LEI' ? 'LEI' : (m === 'RSD' ? 'RSD' : 'Ft')));
 
   // BETÖLTÉSKOR
@@ -638,15 +641,15 @@
     return stepForHUF(currentHufValue);
   }
   async function refreshEurRate(){
+    let timeout;
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 4500);
+      timeout = setTimeout(() => controller.abort(), EXCHANGE_RATE_FETCH_TIMEOUT_MS);
       const res = await fetch('https://open.er-api.com/v6/latest/EUR', { signal: controller.signal, cache: 'no-store' });
-      clearTimeout(timeout);
       if (!res.ok) return;
       const data = await res.json();
       const next = Number(data && data.rates && data.rates.HUF);
-      if (Number.isFinite(next) && next > 200 && next < 600) {
+      if (Number.isFinite(next) && next > MIN_VALID_EUR_RATE && next < MAX_VALID_EUR_RATE) {
         eurRate = next;
         if (stake1Input && stake2Input) {
           const odds1 = parseFloat(odds1Field.value.replace(',', '.'));
@@ -655,7 +658,11 @@
           updateStakeAltDisplays();
         }
       }
-    } catch {}
+    } catch (err) {
+      console.warn('Failed to refresh EUR rate:', err);
+    } finally {
+      if (timeout) clearTimeout(timeout);
+    }
   }
   function sanitizeUrl(u) {
     try {
@@ -692,18 +699,18 @@
 
   function autoSetCurrencyModesFromBooks(){
      const eurBooks = new Set(['betinasia','blaze','blaze.bet.br']);
-     const ronBooks = new Set(['favbet','fortuna','unibet','superbet','betano']);
+     const leiBooks = new Set(['favbet','fortuna','unibet','superbet','betano']);
 
      const b1 = _getBookVal('odds1Book');
      const b2 = _getBookVal('odds2Book');
      const b1l = b1 ? String(b1).toLowerCase() : null;
      const b2l = b2 ? String(b2).toLowerCase() : null;
 
-     stakeMode1 = (b1l && ronBooks.has(b1l)) ? 'LEI'
+     stakeMode1 = (b1l && leiBooks.has(b1l)) ? 'LEI'
                : (b1l && eurBooks.has(b1l)) ? 'EUR'
                : localModeForLang();
 
-     stakeMode2 = (b2l && ronBooks.has(b2l)) ? 'LEI'
+     stakeMode2 = (b2l && leiBooks.has(b2l)) ? 'LEI'
                : (b2l && eurBooks.has(b2l)) ? 'EUR'
                : localModeForLang();
   }
