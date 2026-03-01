@@ -394,7 +394,7 @@
   const _getBookVal = key => _getHiddenVal(key) ?? (new URLSearchParams(window.location.search)).get(key);
 
   let eurRate = 381;
-  const leiRate = 75; // 1 LEI ≈ 75 HUF
+  const ronRate = 75; // 1 RON ≈ 75 HUF
   const rsdRate = 3.3; // 1 RSD ≈ 3.3 HUF
   const EXCHANGE_RATE_FETCH_TIMEOUT_MS = 4500;
   const MIN_VALID_EUR_RATE = 200;
@@ -408,6 +408,7 @@
       odds1: 'Odds 1',
       odds2: 'Odds 2',
       totalStake: 'Teljes tét (Ft)',
+      stakeWord: 'tét',
       calculate: 'Számolás',
       calculateAria: 'Számolás indítása',
       loadError: 'Hiba történt a betöltéskor.',
@@ -422,6 +423,7 @@
       odds1: 'Kvota 1',
       odds2: 'Kvota 2',
       totalStake: 'Ukupan ulog (Ft)',
+      stakeWord: 'ulog',
       calculate: 'Izračunaj',
       calculateAria: 'Pokreni računanje',
       loadError: 'Došlo je do greške pri učitavanju.',
@@ -436,6 +438,7 @@
       odds1: 'Cotă 1',
       odds2: 'Cotă 2',
       totalStake: 'Miză totală (Ft)',
+      stakeWord: 'miză',
       calculate: 'Calculează',
       calculateAria: 'Pornește calculul',
       loadError: 'A apărut o eroare la încărcare.',
@@ -563,7 +566,7 @@
     }
   }
 
-  // Deviza módok (HUF/EUR/LEI/RSD)
+  // Deviza módok (HUF/EUR/RON/RSD)
   let stakeMode1 = 'HUF';
   let stakeMode2 = 'HUF';
 
@@ -586,10 +589,10 @@
   let isFocusedS1 = false;
   let isFocusedS2 = false;
 
-  const localModeForLang = () => (currentLang === 'ro' ? 'LEI' : (currentLang === 'rs' ? 'RSD' : 'HUF')); // hu/default -> HUF
-  const isLocalMode = m => (m === 'LEI' || m === 'RSD');
-  const localRateForMode = m => (m === 'LEI' ? leiRate : (m === 'RSD' ? rsdRate : 1));
-  const labelFor = m => (m === 'EUR' ? 'EUR' : (m === 'LEI' ? 'LEI' : (m === 'RSD' ? 'RSD' : 'Ft')));
+  const localModeForLang = () => (currentLang === 'ro' ? 'RON' : (currentLang === 'rs' ? 'RSD' : 'HUF')); // hu/default -> HUF
+  const isLocalMode = m => (m === 'RON' || m === 'RSD');
+  const localRateForMode = m => (m === 'RON' ? ronRate : (m === 'RSD' ? rsdRate : 1));
+  const labelFor = m => (m === 'EUR' ? 'EUR' : (m === 'RON' ? 'RON' : (m === 'RSD' ? 'RSD' : 'Ft')));
 
   // BETÖLTÉSKOR
   window.addEventListener('DOMContentLoaded', () => {
@@ -699,18 +702,18 @@
 
   function autoSetCurrencyModesFromBooks(){
      const eurBooks = new Set(['betinasia','blaze','blaze.bet.br']);
-     const leiBooks = new Set(['favbet','fortuna','unibet','superbet','betano']);
+     const ronBooks = new Set(['favbet','fortuna','unibet','superbet','betano']);
 
      const b1 = _getBookVal('odds1Book');
      const b2 = _getBookVal('odds2Book');
      const b1l = b1 ? String(b1).toLowerCase() : null;
      const b2l = b2 ? String(b2).toLowerCase() : null;
 
-     stakeMode1 = (b1l && leiBooks.has(b1l)) ? 'LEI'
+     stakeMode1 = (b1l && ronBooks.has(b1l)) ? 'RON'
                : (b1l && eurBooks.has(b1l)) ? 'EUR'
                : localModeForLang();
 
-     stakeMode2 = (b2l && leiBooks.has(b2l)) ? 'LEI'
+     stakeMode2 = (b2l && ronBooks.has(b2l)) ? 'RON'
                : (b2l && eurBooks.has(b2l)) ? 'EUR'
                : localModeForLang();
   }
@@ -810,7 +813,7 @@
   }
   function formatDisplay(n, mode){
     if (mode === 'EUR') return (Math.round(n * 10) / 10).toFixed(1);
-    return Math.round(n).toString(); // HUF/LEI/RSD: egész
+    return Math.round(n).toString(); // HUF/RON/RSD: egész
   }
   function roundToTenthEUR(x) {
     const n = Number(x);
@@ -1044,12 +1047,14 @@
 
     const nfFt = new Intl.NumberFormat('hu-HU');
 
-    const localMode = (stakeMode1 === stakeMode2 && isLocalMode(stakeMode1)) ? stakeMode1 : null;
-    const localCurrencyLabel = localMode || 'Ft';
+    const profitMode = currentLang === 'ro'
+      ? 'RON'
+      : (currentLang === 'rs' ? 'RSD' : ((stakeMode1 === stakeMode2 && isLocalMode(stakeMode1)) ? stakeMode1 : null));
+    const localCurrencyLabel = profitMode || 'Ft';
     const formatProfit = (amtHUF) => {
       if (!Number.isFinite(amtHUF)) return `- ${localCurrencyLabel}`;
-      if (localMode) {
-        const local = Math.round(amtHUF / localRateForMode(localMode));
+      if (profitMode) {
+        const local = Math.round(amtHUF / localRateForMode(profitMode));
         return `${local.toLocaleString('hu-HU')} ${localCurrencyLabel}`;
       }
       return `${nfFt.format(Math.round(amtHUF))} Ft`;
@@ -1117,7 +1122,17 @@
     const s1AltEl = document.getElementById('stake1Alt');
     const s2AltEl = document.getElementById('stake2Alt');
 
-    if (stakeMode1 === 'EUR' || isLocalMode(stakeMode1)) {
+    const localMode = localModeForLang();
+    const onlyLocalAndEur = (currentLang === 'ro' || currentLang === 'rs');
+    if (onlyLocalAndEur) {
+      if (stakeMode1 === 'EUR') {
+        const local1 = Number.isFinite(s1HUF) ? Math.round(s1HUF / localRateForMode(localMode)) : null;
+        if (s1AltEl){ s1AltEl.className = 'ft-value'; s1AltEl.textContent = local1 != null ? `= ${local1.toLocaleString('hu-HU')} ${labelFor(localMode)}` : ''; }
+      } else {
+        const eur1 = Number.isFinite(s1HUF) ? roundToTenthEUR(s1HUF / eurRate) : null;
+        if (s1AltEl){ s1AltEl.className = 'eur-value'; s1AltEl.textContent = eur1 != null ? `= ${eur1.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR` : ''; }
+      }
+    } else if (stakeMode1 === 'EUR' || isLocalMode(stakeMode1)) {
       const ft1 = Number.isFinite(s1HUF) ? s1HUF : null;
       if (s1AltEl){ s1AltEl.className = 'ft-value'; s1AltEl.textContent = ft1 != null ? `= ${ft1.toLocaleString('hu-HU')} Ft` : ''; }
     } else {
@@ -1125,7 +1140,15 @@
       if (s1AltEl){ s1AltEl.className = 'eur-value'; s1AltEl.textContent = eur1 != null ? `= ${eur1.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR` : ''; }
     }
 
-    if (stakeMode2 === 'EUR' || isLocalMode(stakeMode2)) {
+    if (onlyLocalAndEur) {
+      if (stakeMode2 === 'EUR') {
+        const local2 = Number.isFinite(s2HUF) ? Math.round(s2HUF / localRateForMode(localMode)) : null;
+        if (s2AltEl){ s2AltEl.className = 'ft-value'; s2AltEl.textContent = local2 != null ? `= ${local2.toLocaleString('hu-HU')} ${labelFor(localMode)}` : ''; }
+      } else {
+        const eur2 = Number.isFinite(s2HUF) ? roundToTenthEUR(s2HUF / eurRate) : null;
+        if (s2AltEl){ s2AltEl.className = 'eur-value'; s2AltEl.textContent = eur2 != null ? `= ${eur2.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR` : ''; }
+      }
+    } else if (stakeMode2 === 'EUR' || isLocalMode(stakeMode2)) {
       const ft2 = Number.isFinite(s2HUF) ? s2HUF : null;
       if (s2AltEl){ s2AltEl.className = 'ft-value'; s2AltEl.textContent = ft2 != null ? `= ${ft2.toLocaleString('hu-HU')} Ft` : ''; }
     } else {
@@ -1135,8 +1158,8 @@
 
     const s1Label = document.getElementById('stake1Label');
     const s2Label = document.getElementById('stake2Label');
-    if (s1Label) s1Label.textContent = `${labelOdds1.textContent} tét (${labelFor(stakeMode1)}):`;
-    if (s2Label) s2Label.textContent = `${labelOdds2.textContent} tét (${labelFor(stakeMode2)}):`;
+    if (s1Label) s1Label.textContent = `${labelOdds1.textContent} ${t('stakeWord')} (${labelFor(stakeMode1)}):`;
+    if (s2Label) s2Label.textContent = `${labelOdds2.textContent} ${t('stakeWord')} (${labelFor(stakeMode2)}):`;
   }
 
   function toggleStakeMode(which){
@@ -1349,7 +1372,7 @@
     const label1 = document.createElement('span');
     label1.className = 'label-text stake-title';
     label1.id = 'stake1Label';
-    label1.textContent = `${labelOdds1.textContent} tét (${labelFor(stakeMode1)}):`;
+    label1.textContent = `${labelOdds1.textContent} ${t('stakeWord')} (${labelFor(stakeMode1)}):`;
 
     const stake1Box = document.createElement('div');
     stake1Box.style.display = 'flex';
@@ -1444,7 +1467,7 @@
     const label2 = document.createElement('span');
     label2.className = 'label-text stake-title';
     label2.id = 'stake2Label';
-    label2.textContent = `${labelOdds2.textContent} tét (${labelFor(stakeMode2)}):`;
+    label2.textContent = `${labelOdds2.textContent} ${t('stakeWord')} (${labelFor(stakeMode2)}):`;
 
     const stake2Box = document.createElement('div');
     stake2Box.style.display = 'flex';
