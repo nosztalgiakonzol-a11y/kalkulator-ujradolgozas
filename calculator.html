@@ -282,6 +282,9 @@
   .match-pill{ cursor: pointer; user-select: none; outline: none; transition: box-shadow .18s ease, border-color .18s ease, background .18s ease; }
   .match-pill.copied{ border-color: rgba(0,255,204,.38); box-shadow: 0 0 0 3px rgba(0,255,204,.10), 0 4px 18px rgba(0,255,204,.12); }
   .match-pill.copied .text{ background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.03)); padding: 2px 6px; border-radius: 8px; }
+  .url-help{ margin:10px 0 6px; color:#d7dbe0; }
+  .url-help > summary{ cursor:pointer; font-weight:700; }
+  .url-help-body{ margin-top:8px; font-size:.92rem; line-height:1.35; }
   </style>
 </head>
 <body>
@@ -358,6 +361,17 @@
 
     <label for="stake">Teljes tét (Ft)</label>
     <input type="number" id="stake" step="1" min="1" placeholder="pl. 10000" value="10000" />
+    <details class="url-help">
+      <summary>URL paraméterek (súgó)</summary>
+      <div class="url-help-body">
+        <div><b>Alap:</b> <code>odds1</code>, <code>odds2</code>, <code>stake</code></div>
+        <div><b>Feliratok:</b> <code>odds1Label</code>, <code>odds2Label</code></div>
+        <div><b>Irodák:</b> <code>odds1Book</code>, <code>odds2Book</code> (pl. tippmixpro, vegas, betano...)</div>
+        <div><b>Háttérben töltött mezők:</b> <code>Meccs</code>, <code>F1</code>, <code>F2</code> (kis/nagybetűtől függetlenül)</div>
+        <div><b>Egyedi iroda link:</b> <code>&lt;irodakulcs&gt;url</code> (pl. <code>betanourl=https://...</code>)</div>
+        <div><b>Miért ugrik fel üzenet?</b> Akkor jelenik meg, ha az automatikus megnyitást a böngésző popup blokkolója letiltja.</div>
+      </div>
+    </details>
 
     <div id="quickBetWrap"></div>
     <div id="bookmakerButtons"></div>
