@@ -228,15 +228,15 @@
     border-color: rgba(0,255,136,.26);
     box-shadow: 0 20px 44px rgba(0,0,0,.45), 0 0 0 1px rgba(0,255,136,.08);
   }
-  .help-menu{ display:grid; gap:12px; margin-top:6px; }
+  .help-menu{ display:grid; gap:10px; margin-top:8px; }
   .help-row{
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px;
     background: rgba(0,255,136,.07); border:1px solid rgba(0,255,136,.18); border-radius:12px;
     padding:10px 12px;
   }
-  .help-row .lbl{ color:#e6ffe6; font-weight:700; }
-  .help-note{ color:#d7dbe0; line-height:1.4; font-size:.94rem; }
-  .help-menu .btns{ margin-top:2px; }
+  .help-row .lbl{ color:#e6ffe6; font-weight:700; line-height:1.35; }
+  .help-row .lbl.note{ color:#d7dbe0; font-weight:600; font-size:.94rem; }
+  .help-row .inline-link{ min-width:122px; text-align:center; }
 
   .calc-toast{
     position: absolute;
@@ -379,8 +379,8 @@
             <div class="lbl" id="helpNoAccount">Nincs fiókod az irodákhoz?</div>
             <a id="helpRegisterLink" class="inline-link" href="#" target="_blank" rel="noopener">Regisztrálj itt</a>
           </div>
-          <div class="help-note" id="helpNote">Elakadtál vagy nem értesz valamit? Nézd meg a rövid útmutatót.</div>
-          <div class="btns">
+          <div class="help-row">
+            <div class="lbl note" id="helpNote">Elakadtál vagy nem értesz valamit? Nézd meg a rövid útmutatót.</div>
             <a id="helpGuideLink" class="inline-link" href="#" target="_blank" rel="noopener">Útmutató</a>
           </div>
         </div>
