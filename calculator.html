@@ -455,9 +455,14 @@
     rs: "https://arbify-bet.hu/tutorial-sr",
     ro: "https://arbify-bet.hu/tutorial-ro"
   };
-  const REGISTER_FALLBACK_URL = "https://www.betano.com";
+  const REGISTER_URL_BY_LANG = {
+    hu: "https://arbify-bet.hu/register",
+    rs: "https://arbify-bet.hu/register?lang=rs",
+    ro: "https://arbify-bet.hu/register?lang=ro"
+  };
   const POPUP_AUTO_DISMISS_MS = 7500;
   const getGuideUrl = (lang) => GUIDE_URL_BY_LANG[lang] || GUIDE_URL_BY_LANG[detectLang()] || GUIDE_URL_BY_LANG.hu;
+  const getRegisterUrl = (lang) => REGISTER_URL_BY_LANG[lang] || REGISTER_URL_BY_LANG[detectLang()] || REGISTER_URL_BY_LANG.hu;
   const I18N = {
     hu: {
       pageTitle: 'Arbitrázs Kalkulátor – Dark Mode',
@@ -1366,8 +1371,7 @@
     guide.href = getGuideUrl();
 
     const openHelp = () => {
-      const firstBookLink = document.querySelector('#bookmakerButtons a');
-      register.href = firstBookLink?.href || REGISTER_FALLBACK_URL;
+      register.href = getRegisterUrl();
       backdrop.hidden = false; modal.hidden = false;
       requestAnimationFrame(()=>{ backdrop.classList.add('show'); modal.classList.add('show'); });
     };
