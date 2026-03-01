@@ -448,8 +448,9 @@
     return 'hu';
   }
   let currentLang = detectLang();
-  const t = (k) => (I18N[currentLang] && I18N[currentLang][k]) || I18N.hu[k] || k;
+  const t = (k) => I18N[currentLang][k] || I18N.hu[k] || k;
   function applyI18nStatic() {
+    // A HTML lang attribútumában szerbhez az ISO-kód: "sr"
     document.documentElement.lang = currentLang === 'rs' ? 'sr' : currentLang;
     document.title = t('pageTitle');
     const h1 = document.querySelector('h1'); if (h1) h1.textContent = t('appTitle');
