@@ -397,6 +397,69 @@
   const ronRate = 75; // 1 RON ≈ 80 HUF
   const GUIDE_URL = "https://discord.com/channels/1352389902033096724/1400422649502502953/1420467090929750128";
   const POPUP_AUTO_DISMISS_MS = 7500;
+  const I18N = {
+    hu: {
+      pageTitle: 'Arbitrázs Kalkulátor – Dark Mode',
+      appTitle: 'Arbitrázs Kalkulátor',
+      odds1: 'Odds 1',
+      odds2: 'Odds 2',
+      totalStake: 'Teljes tét (Ft)',
+      calculate: 'Számolás',
+      calculateAria: 'Számolás indítása',
+      loadError: 'Hiba történt a betöltéskor.',
+      resultIf1: 'Eredmény, ha az 1-es nyer:',
+      resultIf2: 'Eredmény, ha a 2-es nyer:',
+      guaranteedProfit: 'Garantált profit:'
+    },
+    rs: {
+      pageTitle: 'Arbitražni Kalkulator – Dark Mode',
+      appTitle: 'Arbitražni Kalkulator',
+      odds1: 'Kvota 1',
+      odds2: 'Kvota 2',
+      totalStake: 'Ukupan ulog (Ft)',
+      calculate: 'Izračunaj',
+      calculateAria: 'Pokreni računanje',
+      loadError: 'Došlo je do greške pri učitavanju.',
+      resultIf1: 'Rezultat ako pobedi 1:',
+      resultIf2: 'Rezultat ako pobedi 2:',
+      guaranteedProfit: 'Garantovani profit:'
+    },
+    ro: {
+      pageTitle: 'Calculator Arbitraj – Dark Mode',
+      appTitle: 'Calculator Arbitraj',
+      odds1: 'Cotă 1',
+      odds2: 'Cotă 2',
+      totalStake: 'Miză totală (Ft)',
+      calculate: 'Calculează',
+      calculateAria: 'Pornește calculul',
+      loadError: 'A apărut o eroare la încărcare.',
+      resultIf1: 'Rezultat dacă iese 1:',
+      resultIf2: 'Rezultat dacă iese 2:',
+      guaranteedProfit: 'Profit garantat:'
+    }
+  };
+  function detectLang() {
+    const search = new URLSearchParams(window.location.search);
+    const q = (search.get('lang') || '').toLowerCase();
+    if (q === 'rs' || q === 'ro') return q;
+    const path = String(window.location.pathname || '').toLowerCase().replace(/\/+$/, '');
+    if (path.endsWith('/rs')) return 'rs';
+    if (path.endsWith('/ro')) return 'ro';
+    return 'hu';
+  }
+  let currentLang = detectLang();
+  const t = (k) => (I18N[currentLang] && I18N[currentLang][k]) || I18N.hu[k] || k;
+  function applyI18nStatic() {
+    document.documentElement.lang = currentLang === 'rs' ? 'sr' : currentLang;
+    document.title = t('pageTitle');
+    const h1 = document.querySelector('h1'); if (h1) h1.textContent = t('appTitle');
+    labelOdds1.textContent = t('odds1');
+    labelOdds2.textContent = t('odds2');
+    const stakeLabel = document.querySelector('label[for="stake"]');
+    if (stakeLabel) stakeLabel.textContent = t('totalStake');
+    calcButton.textContent = t('calculate');
+    calcButton.setAttribute('aria-label', t('calculateAria'));
+  }
 
   // LS kulcsok
   const LS_KEY_AUTO_OPEN = 'autoOpenLinks';           // betöltéskor automatikus nyitás
@@ -521,6 +584,7 @@
   window.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.calculator')?.classList.add('visible');
     try {
+      applyI18nStatic();
       applyURLParamsToFields();
 
       // Hidden paramok kitöltése (case-insensitive)
@@ -542,7 +606,7 @@
       initCalculate();
     } catch (e) {
       console.error(e);
-      errorDiv.textContent = 'Hiba történt a betöltéskor.';
+      errorDiv.textContent = t('loadError');
     }
   });
 
@@ -1455,7 +1519,7 @@
     rowProfit1.id = 'profit1Row';
     const labelP1 = document.createElement('span');
     labelP1.className = 'label-text';
-    labelP1.textContent = 'Eredmény, ha az 1-es nyer:';
+    labelP1.textContent = t('resultIf1');
     const valueP1 = document.createElement('span');
     valueP1.id = 'profit1Value';
     valueP1.className = 'value-text';
@@ -1467,7 +1531,7 @@
     rowProfit2.id = 'profit2Row';
     const labelP2 = document.createElement('span');
     labelP2.className = 'label-text';
-    labelP2.textContent = 'Eredmény, ha a 2-es nyer:';
+    labelP2.textContent = t('resultIf2');
     const valueP2 = document.createElement('span');
     valueP2.id = 'profit2Value';
     valueP2.className = 'value-text';
@@ -1481,7 +1545,7 @@
     rowGuaranteed.style.marginTop = '12px';
     const labelG = document.createElement('span');
     labelG.className = 'guaranteed-label';
-    labelG.textContent = 'Garantált minimum:';
+    labelG.textContent = t('guaranteedProfit');
     const valueG = document.createElement('span');
     valueG.id = 'guaranteedValue';
     valueG.className = 'guaranteed-value';
