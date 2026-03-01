@@ -393,8 +393,9 @@
   };
   const _getBookVal = key => _getHiddenVal(key) ?? (new URLSearchParams(window.location.search)).get(key);
 
-  const eurRate = 381;
-  const ronRate = 75; // 1 RON ≈ 80 HUF
+  let eurRate = 381;
+  const leiRate = 75; // 1 LEI ≈ 75 HUF
+  const rsdRate = 3.3; // 1 RSD ≈ 3.3 HUF
   const GUIDE_URL = "https://discord.com/channels/1352389902033096724/1400422649502502953/1420467090929750128";
   const POPUP_AUTO_DISMISS_MS = 7500;
   const I18N = {
@@ -559,7 +560,7 @@
     }
   }
 
-  // Deviza módok (HUF/EUR/RON)
+  // Deviza módok (HUF/EUR/LEI/RSD)
   let stakeMode1 = 'HUF';
   let stakeMode2 = 'HUF';
 
@@ -582,7 +583,10 @@
   let isFocusedS1 = false;
   let isFocusedS2 = false;
 
-  const labelFor = m => (m === 'EUR' ? 'EUR' : (m === 'RON' ? 'RON' : 'Ft'));
+  const localModeForLang = () => (currentLang === 'ro' ? 'LEI' : (currentLang === 'rs' ? 'RSD' : 'HUF'));
+  const isLocalMode = m => (m === 'LEI' || m === 'RSD');
+  const localRateForMode = m => (m === 'LEI' ? leiRate : (m === 'RSD' ? rsdRate : null));
+  const labelFor = m => (m === 'EUR' ? 'EUR' : (m === 'LEI' ? 'LEI' : (m === 'RSD' ? 'RSD' : 'Ft')));
 
   // BETÖLTÉSKOR
   window.addEventListener('DOMContentLoaded', () => {
@@ -600,6 +604,8 @@
       if (meccsParam) { const el = _hidden('Meccs'); if (el) el.value = meccsParam; }
 
       autoSetCurrencyModesFromBooks();
+      refreshEurRate();
+      setInterval(refreshEurRate, 30 * 60 * 1000);
       renderMatchPill();
 
       const meccsEl = document.getElementById('Meccs');
@@ -628,8 +634,28 @@
   }
   function stepForMode(mode, currentHufValue){
     if (mode === 'EUR') return 0.1;
-    if (mode === 'RON') return 1;
+    if (isLocalMode(mode)) return 1;
     return stepForHUF(currentHufValue);
+  }
+  async function refreshEurRate(){
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4500);
+      const res = await fetch('https://open.er-api.com/v6/latest/EUR', { signal: controller.signal, cache: 'no-store' });
+      clearTimeout(timeout);
+      if (!res.ok) return;
+      const data = await res.json();
+      const next = Number(data && data.rates && data.rates.HUF);
+      if (Number.isFinite(next) && next > 200 && next < 600) {
+        eurRate = next;
+        if (stake1Input && stake2Input) {
+          const odds1 = parseFloat(odds1Field.value.replace(',', '.'));
+          const odds2 = parseFloat(odds2Field.value.replace(',', '.'));
+          updateProfits(odds1, odds2);
+          updateStakeAltDisplays();
+        }
+      }
+    } catch {}
   }
   function sanitizeUrl(u) {
     try {
@@ -673,13 +699,13 @@
      const b1l = b1 ? String(b1).toLowerCase() : null;
      const b2l = b2 ? String(b2).toLowerCase() : null;
 
-     stakeMode1 = (b1l && ronBooks.has(b1l)) ? 'RON'
+     stakeMode1 = (b1l && ronBooks.has(b1l)) ? 'LEI'
                : (b1l && eurBooks.has(b1l)) ? 'EUR'
-               : 'HUF';
+               : localModeForLang();
 
-     stakeMode2 = (b2l && ronBooks.has(b2l)) ? 'RON'
+     stakeMode2 = (b2l && ronBooks.has(b2l)) ? 'LEI'
                : (b2l && eurBooks.has(b2l)) ? 'EUR'
-               : 'HUF';
+               : localModeForLang();
   }
 
   // Gombok megjelenítése + Gyors megnyitás viselkedése
@@ -706,41 +732,7 @@
         seen.add(key);
       });
 
-      if (books.length && quickWrap) {
-        const quick = document.createElement("a");
-        quick.id = "quickBetBtn";
-        quick.className = "book-link";
-        const quickUrls = collectBookmakerUrls();
-        quick.href = buildQuickBetLink(quickUrls); // fallback /gyors (ha a kapcsoló KI van)
-        quick.target = "_blank";
-        quick.rel = "noopener";
-        quick.textContent = "Gyors megnyitás";
-
-        // BE kapcsolva: CSAK a két iroda linkje nyíljon, a /gyors NE!
-        quick.addEventListener('click', (e) => {
-          const enabled = (localStorage.getItem(LS_KEY_OPEN_ALL_ON_QUICK) || 'false') === 'true';
-          if (!enabled) return; // menjen a /gyors linkre normálisan
-
-          e.preventDefault(); // sose nyissuk meg a /gyors oldalt, ha be van kapcsolva
-          const urls = collectBookmakerUrls();
-          if (!urls.length) return;
-
-          let openedCount = 0;
-          urls.forEach(u => {
-            try {
-              const w = window.open(u, '_blank', 'noopener');
-              if (w) openedCount++;
-            } catch {}
-          });
-
-          if (openedCount === 0) {
-            // popup blokkoló – jelzés (de a /gyors így sem nyílik meg)
-            showPopupHint();
-          }
-        });
-
-        quickWrap.appendChild(quick);
-      }
+      // Gyors megnyitás gomb ideiglenesen kikapcsolva.
 
       // Iroda gombok
       books.forEach(bm => {
@@ -800,18 +792,18 @@
   function displayToHUF(displayValue, mode){
     const n = Number(String(displayValue).replace(',', '.')) || 0;
     if (mode === 'EUR') return n * eurRate;
-    if (mode === 'RON') return n * ronRate;
+    if (isLocalMode(mode)) return n * localRateForMode(mode);
     return n;
   }
   function hufToDisplay(hufValue, mode){
     const n = Number(hufValue) || 0;
     if (mode === 'EUR') return (n / eurRate);
-    if (mode === 'RON') return (n / ronRate);
+    if (isLocalMode(mode)) return (n / localRateForMode(mode));
     return n;
   }
   function formatDisplay(n, mode){
     if (mode === 'EUR') return (Math.round(n * 10) / 10).toFixed(1);
-    return Math.round(n).toString(); // HUF és RON: egész
+    return Math.round(n).toString(); // HUF/LEI/RSD: egész
   }
   function roundToTenthEUR(x) {
     const n = Number(x);
@@ -894,7 +886,7 @@
   // ==== Kerekítés és léptetés ====
   function roundedPairFrom(source, s1HUF, s2HUF, o1, o2){
     const stepForHufOrRon = (hufValue, mode) => {
-      if (mode === 'RON') return ronRate; // egész RON HUF-térben
+      if (isLocalMode(mode)) return localRateForMode(mode); // egész helyi pénznem HUF-térben
       return stepForHUF(hufValue);
     };
 
@@ -1045,12 +1037,13 @@
 
     const nfFt = new Intl.NumberFormat('hu-HU');
 
-    const useRON = (stakeMode1 === 'RON' && stakeMode2 === 'RON');
+    const localMode = (stakeMode1 === stakeMode2 && isLocalMode(stakeMode1)) ? stakeMode1 : null;
+    const localCurrencyLabel = localMode || 'Ft';
     const formatProfit = (amtHUF) => {
-      if (!Number.isFinite(amtHUF)) return useRON ? '- RON' : '- Ft';
-      if (useRON) {
-        const ron = Math.round(amtHUF / ronRate);
-        return `${ron.toLocaleString('hu-HU')} RON`;
+      if (!Number.isFinite(amtHUF)) return `- ${localCurrencyLabel}`;
+      if (localMode) {
+        const local = Math.round(amtHUF / localRateForMode(localMode));
+        return `${local.toLocaleString('hu-HU')} ${localCurrencyLabel}`;
       }
       return `${nfFt.format(Math.round(amtHUF))} Ft`;
     };
@@ -1063,7 +1056,7 @@
     p2El.textContent = formatProfit(profit2);
     gv.textContent   = Number.isFinite(guaranteed)
       ? `${formatProfit(guaranteed)} (${guaranteedPercent.toFixed(2)}%)`
-      : (useRON ? '- RON' : '- Ft');
+      : `- ${localCurrencyLabel}`;
 
     const LOW_BAND = 1;
 
@@ -1117,7 +1110,7 @@
     const s1AltEl = document.getElementById('stake1Alt');
     const s2AltEl = document.getElementById('stake2Alt');
 
-    if (stakeMode1 === 'EUR' || stakeMode1 === 'RON') {
+    if (stakeMode1 === 'EUR' || isLocalMode(stakeMode1)) {
       const ft1 = Number.isFinite(s1HUF) ? s1HUF : null;
       if (s1AltEl){ s1AltEl.className = 'ft-value'; s1AltEl.textContent = ft1 != null ? `= ${ft1.toLocaleString('hu-HU')} Ft` : ''; }
     } else {
@@ -1125,7 +1118,7 @@
       if (s1AltEl){ s1AltEl.className = 'eur-value'; s1AltEl.textContent = eur1 != null ? `= ${eur1.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR` : ''; }
     }
 
-    if (stakeMode2 === 'EUR' || stakeMode2 === 'RON') {
+    if (stakeMode2 === 'EUR' || isLocalMode(stakeMode2)) {
       const ft2 = Number.isFinite(s2HUF) ? s2HUF : null;
       if (s2AltEl){ s2AltEl.className = 'ft-value'; s2AltEl.textContent = ft2 != null ? `= ${ft2.toLocaleString('hu-HU')} Ft` : ''; }
     } else {
@@ -1145,12 +1138,12 @@
 
     if (which === 1 && stake1Input) {
       const currentHUF = displayToHUF(stake1Input.value, stakeMode1);
-      stakeMode1 = (stakeMode1 === 'EUR') ? 'HUF' : 'EUR';
+      stakeMode1 = (stakeMode1 === 'EUR') ? localModeForLang() : 'EUR';
       writeDisplayStake(stake1Input, currentHUF, stakeMode1);
     }
     if (which === 2 && stake2Input) {
       const currentHUF = displayToHUF(stake2Input.value, stakeMode2);
-      stakeMode2 = (stakeMode2 === 'EUR') ? 'HUF' : 'EUR';
+      stakeMode2 = (stakeMode2 === 'EUR') ? localModeForLang() : 'EUR';
       writeDisplayStake(stake2Input, currentHUF, stakeMode2);
     }
 
