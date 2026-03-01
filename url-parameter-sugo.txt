@@ -1,0 +1,8 @@
+URL paraméterek (súgó)
+
+Alap: odds1, odds2, stake
+Feliratok: odds1Label, odds2Label
+Irodák: odds1Book, odds2Book (pl. tippmixpro, vegas, betano...)
+Háttérben töltött mezők: Meccs, F1, F2 (kis/nagybetűtől függetlenül)
+Egyedi iroda link: <irodakulcs>url (pl. betanourl=https://...)
+Miért ugrik fel üzenet? Akkor jelenik meg, ha az automatikus megnyitást a böngésző popup blokkolója letiltja.
