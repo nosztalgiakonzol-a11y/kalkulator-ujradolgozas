@@ -409,6 +409,7 @@
       loadError: 'Hiba történt a betöltéskor.',
       resultIf1: 'Eredmény, ha az 1-es nyer:',
       resultIf2: 'Eredmény, ha a 2-es nyer:',
+      resultIfBookWins: 'Eredmény, ha a(z) {book} nyer:',
       guaranteedProfit: 'Garantált profit:'
     },
     rs: {
@@ -422,6 +423,7 @@
       loadError: 'Došlo je do greške pri učitavanju.',
       resultIf1: 'Rezultat ako pobedi 1:',
       resultIf2: 'Rezultat ako pobedi 2:',
+      resultIfBookWins: 'Rezultat ako pobedi {book}:',
       guaranteedProfit: 'Garantovani profit:'
     },
     ro: {
@@ -435,6 +437,7 @@
       loadError: 'A apărut o eroare la încărcare.',
       resultIf1: 'Rezultat dacă iese 1:',
       resultIf2: 'Rezultat dacă iese 2:',
+      resultIfBookWins: 'Rezultat dacă câștigă {book}:',
       guaranteedProfit: 'Profit garantat:'
     }
   };
@@ -1094,9 +1097,7 @@
     const key = String(bookKey || '').toLowerCase().trim();
     const bookLabel = (key && bookmakers[key] && bookmakers[key].label) ? bookmakers[key].label : '';
     if (!bookLabel) return t(fallbackKey);
-    if (currentLang === 'rs') return `Rezultat ako pobedi ${bookLabel}:`;
-    if (currentLang === 'ro') return `Rezultat dacă câștigă ${bookLabel}:`;
-    return `Eredmény, ha a(z) ${bookLabel} nyer:`;
+    return t('resultIfBookWins').replace('{book}', bookLabel);
   }
 
   function updateResultLabels() {
