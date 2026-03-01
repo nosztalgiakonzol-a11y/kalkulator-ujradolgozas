@@ -1027,6 +1027,7 @@
 
   function updateProfits(odds1, odds2) {
     if (!stake1Input || !stake2Input) return;
+    updateResultLabels();
 
     const [s1HUF, s2HUF] = getDisplayStakesHUF(odds1, odds2);
     const totalInvested = s1HUF + s2HUF;
@@ -1087,6 +1088,22 @@
     }
 
     stakeField.value = String(Math.round(totalInvested));
+  }
+
+  function resultLabelForBook(bookKey, fallbackKey) {
+    const key = String(bookKey || '').toLowerCase().trim();
+    const bookLabel = (key && bookmakers[key] && bookmakers[key].label) ? bookmakers[key].label : '';
+    if (!bookLabel) return t(fallbackKey);
+    if (currentLang === 'rs') return `Rezultat ako pobedi ${bookLabel}:`;
+    if (currentLang === 'ro') return `Rezultat dacă câștigă ${bookLabel}:`;
+    return `Eredmény, ha a(z) ${bookLabel} nyer:`;
+  }
+
+  function updateResultLabels() {
+    const labelP1 = document.querySelector('#profit1Row .label-text');
+    const labelP2 = document.querySelector('#profit2Row .label-text');
+    if (labelP1) labelP1.textContent = resultLabelForBook(_getBookVal('odds1Book'), 'resultIf1');
+    if (labelP2) labelP2.textContent = resultLabelForBook(_getBookVal('odds2Book'), 'resultIf2');
   }
 
   function updateStakeAltDisplays() {
@@ -1520,7 +1537,7 @@
     rowProfit1.id = 'profit1Row';
     const labelP1 = document.createElement('span');
     labelP1.className = 'label-text';
-    labelP1.textContent = t('resultIf1');
+    labelP1.textContent = resultLabelForBook(_getBookVal('odds1Book'), 'resultIf1');
     const valueP1 = document.createElement('span');
     valueP1.id = 'profit1Value';
     valueP1.className = 'value-text';
@@ -1532,7 +1549,7 @@
     rowProfit2.id = 'profit2Row';
     const labelP2 = document.createElement('span');
     labelP2.className = 'label-text';
-    labelP2.textContent = t('resultIf2');
+    labelP2.textContent = resultLabelForBook(_getBookVal('odds2Book'), 'resultIf2');
     const valueP2 = document.createElement('span');
     valueP2.id = 'profit2Value';
     valueP2.className = 'value-text';
