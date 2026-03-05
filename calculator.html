@@ -406,8 +406,8 @@
     <label for="odds2" id="labelOdds2" class="odds-title">Odds 2</label>
     <input type="number" id="odds2" step="0.01" min="1.01" placeholder="pl. 2,63" value="2.63" />
 
-    <label for="stake">Teljes tét (EUR)</label>
-    <input type="number" id="stake" step="0.1" min="0.1" placeholder="pl. 100" value="100" />
+    <label for="stake">Teljes tét (Ft)</label>
+    <input type="number" id="stake" step="1" min="1" placeholder="pl. 10000" value="10000" />
     <div id="quickBetWrap"></div>
     <div id="bookmakerButtons"></div>
 
@@ -448,7 +448,7 @@
     hu: "https://arbify-bet.hu/register",
     rs: "https://arbify-bet.hu/register?lang=rs",
     ro: "https://arbify-bet.hu/register?lang=ro",
-    sk: "https://arbify-bet.hu/?lang=sk"
+    sk: "https://arbifybet.hu/register?lang=sk"
   };
   const POPUP_AUTO_DISMISS_MS = 7500;
   const getGuideUrl = (lang) => GUIDE_URL_BY_LANG[lang] || GUIDE_URL_BY_LANG[detectLang()] || GUIDE_URL_BY_LANG.hu;
@@ -468,7 +468,7 @@
       settingsHelpDesc: 'Ha az automatikus nyitás nem működik, olvasd el az útmutatót a Discordon.',
       odds1: 'Odds 1',
       odds2: 'Odds 2',
-      totalStake: 'Teljes tét (EUR)',
+      totalStake: 'Teljes tét (Ft)',
       stakeWord: 'tét',
       calculate: 'Számolás',
       calculateAria: 'Számolás indítása',
@@ -505,7 +505,7 @@
       settingsHelpDesc: 'Ako automatsko otvaranje ne radi, pogledaj vodič na Discord-u.',
       odds1: 'Kvota 1',
       odds2: 'Kvota 2',
-      totalStake: 'Ukupan ulog (EUR)',
+      totalStake: 'Ukupan ulog (Ft)',
       stakeWord: 'ulog',
       calculate: 'Izračunaj',
       calculateAria: 'Pokreni računanje',
@@ -542,7 +542,7 @@
       settingsHelpDesc: 'Dacă deschiderea automată nu funcționează, citește ghidul pe Discord.',
       odds1: 'Cotă 1',
       odds2: 'Cotă 2',
-      totalStake: 'Miză totală (EUR)',
+      totalStake: 'Miză totală (Ft)',
       stakeWord: 'miză',
       calculate: 'Calculează',
       calculateAria: 'Pornește calculul',
@@ -649,6 +649,19 @@
     labelOdds2.textContent = t('odds2');
     const stakeLabel = document.querySelector('label[for="stake"]');
     if (stakeLabel) stakeLabel.textContent = t('totalStake');
+    if (stakeField) {
+      const hasStakeParam = (new URLSearchParams(window.location.search)).has('stake');
+      if (currentLang === 'sk') {
+        stakeField.step = '0.1';
+        stakeField.min = '0.1';
+        stakeField.placeholder = 'pl. 100';
+        if (!hasStakeParam) stakeField.value = '100';
+      } else {
+        stakeField.step = '1';
+        stakeField.min = '1';
+        stakeField.placeholder = 'pl. 10000';
+      }
+    }
     calcButton.textContent = t('calculate');
     calcButton.setAttribute('aria-label', t('calculateAria'));
     const helpBtn = document.getElementById('helpBtn');
@@ -759,9 +772,9 @@
     }
   }
 
-  // Deviza módok (csak EUR)
-  let stakeMode1 = 'EUR';
-  let stakeMode2 = 'EUR';
+  // Deviza módok (HUF/EUR/RON/RSD)
+  let stakeMode1 = 'HUF';
+  let stakeMode2 = 'HUF';
 
   let stake1Input, stake2Input;
   let isUpdating = false;
@@ -782,20 +795,25 @@
   let isFocusedS1 = false;
   let isFocusedS2 = false;
 
-  const localModeForLang = () => 'EUR';
+  const localModeForLang = () => (currentLang === 'sk' ? 'EUR' : (currentLang === 'ro' ? 'RON' : (currentLang === 'rs' ? 'RSD' : 'HUF')));
   const isLocalMode = m => (m === 'RON' || m === 'RSD');
   const localRateForMode = m => (m === 'RON' ? ronRate : (m === 'RSD' ? rsdRate : 1));
-  const labelFor = () => 'EUR';
+  const labelFor = m => (m === 'EUR' ? 'EUR' : (m === 'RON' ? 'RON' : (m === 'RSD' ? 'RSD' : 'Ft')));
   const stakeInputToHUF = () => {
-    const totalStakeEur = parseFloat(stakeField.value.replace(',', '.'));
-    if (!Number.isFinite(totalStakeEur)) return NaN;
-    return totalStakeEur * eurRate;
+    const totalStake = parseFloat(stakeField.value.replace(',', '.'));
+    if (!Number.isFinite(totalStake)) return NaN;
+    return currentLang === 'sk' ? (totalStake * eurRate) : totalStake;
   };
   const setStakeInputFromHUF = (hufValue) => {
-    const eurValue = hufToDisplay(hufValue, 'EUR');
-    stakeField.value = Number.isFinite(eurValue)
-      ? (Math.round(eurValue * 100) / 100).toFixed(2)
-      : '';
+    if (currentLang === 'sk') {
+      const eurValue = hufToDisplay(hufValue, 'EUR');
+      stakeField.value = Number.isFinite(eurValue)
+        ? (Math.round(eurValue * 100) / 100).toFixed(2)
+        : '';
+      return;
+    }
+    const huf = Number(hufValue);
+    stakeField.value = Number.isFinite(huf) ? Math.round(huf).toString() : '';
   };
 
   // BETÖLTÉSKOR
@@ -916,14 +934,32 @@
     if (!isNaN(o2) && o2 >= 1.01) odds2Field.value = o2.toFixed(2);
 
     const t = parseFloat(params.get('stake'));
-    if (!isNaN(t) && t > 0) stakeField.value = t.toFixed(2);
+    if (!isNaN(t) && t > 0) stakeField.value = currentLang === 'sk' ? t.toFixed(2) : t.toFixed(0);
 
     showBookmakerButtons();
   }
 
   function autoSetCurrencyModesFromBooks(){
-     stakeMode1 = 'EUR';
-     stakeMode2 = 'EUR';
+     if (currentLang === 'sk') {
+       stakeMode1 = 'EUR';
+       stakeMode2 = 'EUR';
+       return;
+     }
+     const eurBooks = new Set(['betinasia','blaze','blaze.bet.br']);
+     const ronBooks = new Set(['favbet','fortuna','unibet','superbet','betano']);
+
+     const b1 = _getBookVal('odds1Book');
+     const b2 = _getBookVal('odds2Book');
+     const b1l = b1 ? String(b1).toLowerCase() : null;
+     const b2l = b2 ? String(b2).toLowerCase() : null;
+
+     stakeMode1 = (b1l && ronBooks.has(b1l)) ? 'RON'
+               : (b1l && eurBooks.has(b1l)) ? 'EUR'
+               : localModeForLang();
+
+     stakeMode2 = (b2l && ronBooks.has(b2l)) ? 'RON'
+               : (b2l && eurBooks.has(b2l)) ? 'EUR'
+               : localModeForLang();
   }
 
   // Gombok megjelenítése + Gyors megnyitás viselkedése
@@ -979,7 +1015,7 @@
 
     if (Number.isFinite(o1) && o1 >= 1.01) params.set('odds1', o1.toFixed(2));
     if (Number.isFinite(o2) && o2 >= 1.01) params.set('odds2', o2.toFixed(2));
-    if (Number.isFinite(t)  && t > 0)      params.set('stake', t.toFixed(2));
+    if (Number.isFinite(t)  && t > 0)      params.set('stake', currentLang === 'sk' ? t.toFixed(2) : t.toFixed(0));
 
     history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
   }
@@ -1034,7 +1070,7 @@
 
     const odds1      = parseFloat(odds1Field.value.replace(',', '.'));
     const odds2      = parseFloat(odds2Field.value.replace(',', '.'));
-    const totalStake = stakeInputToHUF(); // EUR input -> HUF
+    const totalStake = stakeInputToHUF(); // sk: EUR -> HUF, egyébként HUF
 
     resultDiv.innerHTML = '';
     errorDiv.textContent = '';
@@ -1253,11 +1289,23 @@
     const p2pct = totalInvested > 0 ? (profit2 / totalInvested) * 100 : 0;
     const guaranteedPercent = totalInvested > 0 ? (guaranteed / totalInvested) * 100 : 0;
 
-    const localCurrencyLabel = 'EUR';
+    const profitMode = currentLang === 'sk'
+      ? 'EUR'
+      : (currentLang === 'ro'
+        ? 'RON'
+        : (currentLang === 'rs' ? 'RSD' : ((stakeMode1 === stakeMode2 && isLocalMode(stakeMode1)) ? stakeMode1 : null)));
+    const localCurrencyLabel = profitMode === 'EUR' ? 'EUR' : (profitMode || 'Ft');
     const formatProfit = (amtHUF) => {
       if (!Number.isFinite(amtHUF)) return `- ${localCurrencyLabel}`;
-      const eurValue = amtHUF / eurRate;
-      return `${eurValue.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${localCurrencyLabel}`;
+      if (profitMode === 'EUR') {
+        const eurValue = amtHUF / eurRate;
+        return `${eurValue.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR`;
+      }
+      if (profitMode) {
+        const local = Math.round(amtHUF / localRateForMode(profitMode));
+        return `${local.toLocaleString('hu-HU')} ${localCurrencyLabel}`;
+      }
+      return `${Math.round(amtHUF).toLocaleString('hu-HU')} Ft`;
     };
 
     const p1El = document.getElementById('profit1Value');
@@ -1314,15 +1362,75 @@
 
   function updateStakeAltDisplays() {
     if (!stake1Input || !stake2Input) return;
+    const odds1 = parseFloat(odds1Field.value.replace(',', '.'));
+    const odds2 = parseFloat(odds2Field.value.replace(',', '.'));
+    const [s1HUF, s2HUF] = getDisplayStakesHUF(odds1, odds2);
     const s1AltEl = document.getElementById('stake1Alt');
     const s2AltEl = document.getElementById('stake2Alt');
-    if (s1AltEl) s1AltEl.textContent = '';
-    if (s2AltEl) s2AltEl.textContent = '';
+    if (currentLang === 'sk') {
+      if (s1AltEl) s1AltEl.textContent = '';
+      if (s2AltEl) s2AltEl.textContent = '';
+    } else {
+      const localMode = localModeForLang();
+      const onlyLocalAndEur = (currentLang === 'ro' || currentLang === 'rs');
+      if (onlyLocalAndEur) {
+        if (stakeMode1 === 'EUR') {
+          const local1 = Number.isFinite(s1HUF) ? Math.round(s1HUF / localRateForMode(localMode)) : null;
+          if (s1AltEl){ s1AltEl.className = 'ft-value'; s1AltEl.textContent = local1 != null ? `= ${local1.toLocaleString('hu-HU')} ${labelFor(localMode)}` : ''; }
+        } else {
+          const eur1 = Number.isFinite(s1HUF) ? roundToTenthEUR(s1HUF / eurRate) : null;
+          if (s1AltEl){ s1AltEl.className = 'eur-value'; s1AltEl.textContent = eur1 != null ? `= ${eur1.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR` : ''; }
+        }
+      } else if (stakeMode1 === 'EUR' || isLocalMode(stakeMode1)) {
+        const ft1 = Number.isFinite(s1HUF) ? s1HUF : null;
+        if (s1AltEl){ s1AltEl.className = 'ft-value'; s1AltEl.textContent = ft1 != null ? `= ${ft1.toLocaleString('hu-HU')} Ft` : ''; }
+      } else {
+        const eur1 = Number.isFinite(s1HUF) ? roundToTenthEUR(s1HUF / eurRate) : null;
+        if (s1AltEl){ s1AltEl.className = 'eur-value'; s1AltEl.textContent = eur1 != null ? `= ${eur1.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR` : ''; }
+      }
+
+      if (onlyLocalAndEur) {
+        if (stakeMode2 === 'EUR') {
+          const local2 = Number.isFinite(s2HUF) ? Math.round(s2HUF / localRateForMode(localMode)) : null;
+          if (s2AltEl){ s2AltEl.className = 'ft-value'; s2AltEl.textContent = local2 != null ? `= ${local2.toLocaleString('hu-HU')} ${labelFor(localMode)}` : ''; }
+        } else {
+          const eur2 = Number.isFinite(s2HUF) ? roundToTenthEUR(s2HUF / eurRate) : null;
+          if (s2AltEl){ s2AltEl.className = 'eur-value'; s2AltEl.textContent = eur2 != null ? `= ${eur2.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR` : ''; }
+        }
+      } else if (stakeMode2 === 'EUR' || isLocalMode(stakeMode2)) {
+        const ft2 = Number.isFinite(s2HUF) ? s2HUF : null;
+        if (s2AltEl){ s2AltEl.className = 'ft-value'; s2AltEl.textContent = ft2 != null ? `= ${ft2.toLocaleString('hu-HU')} Ft` : ''; }
+      } else {
+        const eur2 = Number.isFinite(s2HUF) ? roundToTenthEUR(s2HUF / eurRate) : null;
+        if (s2AltEl){ s2AltEl.className = 'eur-value'; s2AltEl.textContent = eur2 != null ? `= ${eur2.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR` : ''; }
+      }
+    }
 
     const s1Label = document.getElementById('stake1Label');
     const s2Label = document.getElementById('stake2Label');
-    if (s1Label) s1Label.textContent = `${labelOdds1.textContent} ${t('stakeWord')} (${labelFor()}):`;
-    if (s2Label) s2Label.textContent = `${labelOdds2.textContent} ${t('stakeWord')} (${labelFor()}):`;
+    if (s1Label) s1Label.textContent = `${labelOdds1.textContent} ${t('stakeWord')} (${labelFor(stakeMode1)}):`;
+    if (s2Label) s2Label.textContent = `${labelOdds2.textContent} ${t('stakeWord')} (${labelFor(stakeMode2)}):`;
+  }
+
+  function toggleStakeMode(which){
+    if (currentLang === 'sk') return;
+    const odds1 = parseFloat(odds1Field.value.replace(',', '.'));
+    const odds2 = parseFloat(odds2Field.value.replace(',', '.'));
+
+    if (which === 1 && stake1Input) {
+      const currentHUF = displayToHUF(stake1Input.value, stakeMode1);
+      stakeMode1 = (stakeMode1 === 'EUR') ? localModeForLang() : 'EUR';
+      writeDisplayStake(stake1Input, currentHUF, stakeMode1);
+    }
+    if (which === 2 && stake2Input) {
+      const currentHUF = displayToHUF(stake2Input.value, stakeMode2);
+      stakeMode2 = (stakeMode2 === 'EUR') ? localModeForLang() : 'EUR';
+      writeDisplayStake(stake2Input, currentHUF, stakeMode2);
+    }
+
+    syncInputSteps();
+    updateProfits(odds1, odds2);
+    updateStakeAltDisplays();
   }
 
   // Betöltéskori kerekítés + mozgásfigyelők
@@ -1546,7 +1654,7 @@
     const label1 = document.createElement('span');
     label1.className = 'label-text stake-title';
     label1.id = 'stake1Label';
-    label1.textContent = `${labelOdds1.textContent} ${t('stakeWord')} (${labelFor()}):`;
+    label1.textContent = `${labelOdds1.textContent} ${t('stakeWord')} (${labelFor(stakeMode1)}):`;
 
     const stake1Box = document.createElement('div');
     stake1Box.style.display = 'flex';
@@ -1616,14 +1724,15 @@
 
     const stake1Alt = document.createElement('span');
     stake1Alt.id = 'stake1Alt';
-    stake1Alt.className = 'eur-value';
+    stake1Alt.className = stakeMode1 === 'EUR' ? 'ft-value' : 'eur-value';
 
     const swapInline1 = document.createElement('img');
     swapInline1.src = 'icon8-refresh.png';
     swapInline1.alt = t('swapCurrencyAlt');
     swapInline1.title = t('swapCurrencyTitle');
     swapInline1.className = 'swap-emoji-inline';
-    swapInline1.style.display = 'none';
+    swapInline1.style.display = currentLang === 'sk' ? 'none' : '';
+    swapInline1.addEventListener('click', () => toggleStakeMode(1));
 
     stake1AltWrap.appendChild(stake1Alt);
     stake1AltWrap.appendChild(swapInline1);
@@ -1641,7 +1750,7 @@
     const label2 = document.createElement('span');
     label2.className = 'label-text stake-title';
     label2.id = 'stake2Label';
-    label2.textContent = `${labelOdds2.textContent} ${t('stakeWord')} (${labelFor()}):`;
+    label2.textContent = `${labelOdds2.textContent} ${t('stakeWord')} (${labelFor(stakeMode2)}):`;
 
     const stake2Box = document.createElement('div');
     stake2Box.style.display = 'flex';
@@ -1711,14 +1820,15 @@
 
     const stake2Alt = document.createElement('span');
     stake2Alt.id = 'stake2Alt';
-    stake2Alt.className = 'eur-value';
+    stake2Alt.className = stakeMode2 === 'EUR' ? 'ft-value' : 'eur-value';
 
     const swapInline2 = document.createElement('img');
     swapInline2.src = 'icon8-refresh.png';
     swapInline2.alt = t('swapCurrencyAlt');
     swapInline2.title = t('swapCurrencyTitle');
     swapInline2.className = 'swap-emoji-inline';
-    swapInline2.style.display = 'none';
+    swapInline2.style.display = currentLang === 'sk' ? 'none' : '';
+    swapInline2.addEventListener('click', () => toggleStakeMode(2));
 
     stake2AltWrap.appendChild(stake2Alt);
     stake2AltWrap.appendChild(swapInline2);
