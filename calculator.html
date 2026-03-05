@@ -348,7 +348,7 @@
         <div class="setting-row">
           <div style="max-width: calc(100% - 120px);">
             <div class="lbl" id="openAllLabel">Oldalak megnyitása egyszerre</div>
-            <div class="desc" id="openAllDesc">Ha be van kapcsolva, a „Gyors megnyitás” gomb az összes irodát egyszerre nyitja meg új füleken .</div>
+            <div class="desc" id="openAllDesc">Ha be van kapcsolva, a „Gyors megnyitás” gomb az összes irodát egyszerre nyitja meg új füleken.</div>
           </div>
           <label class="toggle" title="Be/Ki">
             <input type="checkbox" id="openAllToggle">
@@ -785,7 +785,7 @@
   const localModeForLang = () => 'EUR';
   const isLocalMode = m => (m === 'RON' || m === 'RSD');
   const localRateForMode = m => (m === 'RON' ? ronRate : (m === 'RSD' ? rsdRate : 1));
-  const labelFor = m => (m === 'EUR' ? 'EUR' : (m === 'RON' ? 'RON' : (m === 'RSD' ? 'RSD' : 'EUR')));
+  const labelFor = () => 'EUR';
   const stakeInputToHUF = () => {
     const totalStakeEur = parseFloat(stakeField.value.replace(',', '.'));
     if (!Number.isFinite(totalStakeEur)) return NaN;
@@ -1321,12 +1321,8 @@
 
     const s1Label = document.getElementById('stake1Label');
     const s2Label = document.getElementById('stake2Label');
-    if (s1Label) s1Label.textContent = `${labelOdds1.textContent} ${t('stakeWord')} (${labelFor(stakeMode1)}):`;
-    if (s2Label) s2Label.textContent = `${labelOdds2.textContent} ${t('stakeWord')} (${labelFor(stakeMode2)}):`;
-  }
-
-  function toggleStakeMode(which){
-    if (which !== 1 && which !== 2) return;
+    if (s1Label) s1Label.textContent = `${labelOdds1.textContent} ${t('stakeWord')} (${labelFor()}):`;
+    if (s2Label) s2Label.textContent = `${labelOdds2.textContent} ${t('stakeWord')} (${labelFor()}):`;
   }
 
   // Betöltéskori kerekítés + mozgásfigyelők
@@ -1550,7 +1546,7 @@
     const label1 = document.createElement('span');
     label1.className = 'label-text stake-title';
     label1.id = 'stake1Label';
-    label1.textContent = `${labelOdds1.textContent} ${t('stakeWord')} (${labelFor(stakeMode1)}):`;
+    label1.textContent = `${labelOdds1.textContent} ${t('stakeWord')} (${labelFor()}):`;
 
     const stake1Box = document.createElement('div');
     stake1Box.style.display = 'flex';
@@ -1628,7 +1624,6 @@
     swapInline1.title = t('swapCurrencyTitle');
     swapInline1.className = 'swap-emoji-inline';
     swapInline1.style.display = 'none';
-    swapInline1.addEventListener('click', () => toggleStakeMode(1));
 
     stake1AltWrap.appendChild(stake1Alt);
     stake1AltWrap.appendChild(swapInline1);
@@ -1646,7 +1641,7 @@
     const label2 = document.createElement('span');
     label2.className = 'label-text stake-title';
     label2.id = 'stake2Label';
-    label2.textContent = `${labelOdds2.textContent} ${t('stakeWord')} (${labelFor(stakeMode2)}):`;
+    label2.textContent = `${labelOdds2.textContent} ${t('stakeWord')} (${labelFor()}):`;
 
     const stake2Box = document.createElement('div');
     stake2Box.style.display = 'flex';
@@ -1724,7 +1719,6 @@
     swapInline2.title = t('swapCurrencyTitle');
     swapInline2.className = 'swap-emoji-inline';
     swapInline2.style.display = 'none';
-    swapInline2.addEventListener('click', () => toggleStakeMode(2));
 
     stake2AltWrap.appendChild(stake2Alt);
     stake2AltWrap.appendChild(swapInline2);
