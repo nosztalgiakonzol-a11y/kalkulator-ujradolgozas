@@ -222,7 +222,7 @@
   .popup-modal .txt{ color:#e0e0e0; line-height:1.35; margin-top:6px; }
   .modal .btns{ display:flex; gap:10px; justify-content:flex-end; margin-top:14px; flex-wrap:wrap; }
   .inline-link{ border:1px solid #00ff88; background:#173329; color:#bfffdc; border-radius:10px; padding:10px 14px; text-decoration:none; font-weight:700; }
-  .help-modal-panel{ place-items: start end; padding: 58px 14px 0; }
+  .help-modal-panel{ place-items: center; padding: 14px; }
   .help-modal-panel .box{
     width:min(92vw, 360px);
     border-color: rgba(0,255,136,.26);
@@ -237,6 +237,12 @@
   .help-row .lbl{ color:#e6ffe6; font-weight:700; line-height:1.35; }
   .help-row .lbl.note{ color:#d7dbe0; font-weight:600; font-size:.94rem; }
   .help-row .inline-link{ min-width:122px; text-align:center; }
+  @media (max-width: 520px){
+    .help-modal-panel{ padding:10px; }
+    .help-modal-panel .box{ width:min(96vw, 360px); }
+    .help-row{ grid-template-columns:1fr; }
+    .help-row .inline-link{ width:100%; min-width:0; }
+  }
 
   .calc-toast{
     position: absolute;
@@ -315,10 +321,10 @@
   </style>
 </head>
 <body>
-  <div class="calculator" role="main" aria-label="Arbitrázs kalkulátor">
+  <div class="calculator" role="main" id="calculatorRoot" aria-label="Arbitrázs kalkulátor">
     <!-- Beállítások gomb -->
     <button class="settings-btn" id="settingsBtn" aria-label="Beállítások" style="display: none;">
-      <img src="123.png" alt="Beállítások">
+      <img src="123.png" id="settingsBtnIcon" alt="Beállítások">
     </button>
     <button class="help-btn" id="helpBtn" aria-label="Segítség">?</button>
 
@@ -327,14 +333,14 @@
     <div class="modal" id="settingsModal" hidden>
       <div class="box">
         <div class="hdr">
-          <div class="title">Beállítások</div>
+          <div class="title" id="settingsTitle">Beállítások</div>
           <span class="close-x" id="settingsClose">✕</span>
         </div>
 
         <div class="setting-row">
           <div style="max-width: calc(100% - 120px);">
-            <div class="lbl">Fogadóirodák automatikus nyitása</div>
-            <div class="desc">Betöltéskor a linkelt irodák megnyitása új fülön.</div>
+            <div class="lbl" id="autoOpenLabel">Fogadóirodák automatikus nyitása</div>
+            <div class="desc" id="autoOpenDesc">Betöltéskor a linkelt irodák megnyitása új fülön.</div>
           </div>
           <label class="toggle" title="Be/Ki">
             <input type="checkbox" id="autoOpenToggle">
@@ -347,8 +353,8 @@
         <!-- ÚJ: Oldalak megnyitása egyszerre (Gyors megnyitásra) -->
         <div class="setting-row">
           <div style="max-width: calc(100% - 120px);">
-            <div class="lbl">Oldalak megnyitása egyszerre</div>
-            <div class="desc">Ha be van kapcsolva, a „Gyors megnyitás” gomb az összes irodát egyszerre nyitja meg új füleken .</div>
+            <div class="lbl" id="openAllLabel">Oldalak megnyitása egyszerre</div>
+            <div class="desc" id="openAllDesc">Ha be van kapcsolva, a „Gyors megnyitás” gomb az összes irodát egyszerre nyitja meg új füleken.</div>
           </div>
           <label class="toggle" title="Be/Ki">
             <input type="checkbox" id="openAllToggle">
@@ -360,8 +366,8 @@
 
         <div class="setting-row">
           <div style="max-width: calc(100% - 120px);">
-            <div class="lbl">Segítség</div>
-            <div class="desc">Ha az automatikus nyitás nem működik, olvasd el az útmutatót a Discordon.</div>
+            <div class="lbl" id="settingsHelpLabel">Segítség</div>
+            <div class="desc" id="settingsHelpDesc">Ha az automatikus nyitás nem működik, olvasd el az útmutatót a Discordon.</div>
           </div>
           <a id="guideLink" class="inline-link" href="#" target="_blank" rel="noopener" title="Útmutató">Útmutató</a>
         </div>
@@ -441,12 +447,14 @@
   const GUIDE_URL_BY_LANG = {
     hu: "https://arbify-bet.hu/tutorial-hu",
     rs: "https://arbify-bet.hu/tutorial-sr",
-    ro: "https://arbify-bet.hu/tutorial-ro"
+    ro: "https://arbify-bet.hu/tutorial-ro",
+    sk: "https://arbify-bet.hu/tutorial-sk"
   };
   const REGISTER_URL_BY_LANG = {
     hu: "https://arbify-bet.hu/register",
     rs: "https://arbify-bet.hu/register?lang=rs",
-    ro: "https://arbify-bet.hu/register?lang=ro"
+    ro: "https://arbify-bet.hu/register?lang=ro",
+    sk: "https://arbifybet.hu/register?lang=sk"
   };
   const POPUP_AUTO_DISMISS_MS = 7500;
   const getGuideUrl = (lang) => GUIDE_URL_BY_LANG[lang] || GUIDE_URL_BY_LANG[detectLang()] || GUIDE_URL_BY_LANG.hu;
@@ -455,6 +463,15 @@
     hu: {
       pageTitle: 'Arbitrázs Kalkulátor – Dark Mode',
       appTitle: 'Arbitrázs Kalkulátor',
+      calculatorAria: 'Arbitrázs kalkulátor',
+      settingsAria: 'Beállítások',
+      settingsTitle: 'Beállítások',
+      autoOpenLabel: 'Fogadóirodák automatikus nyitása',
+      autoOpenDesc: 'Betöltéskor a linkelt irodák megnyitása új fülön.',
+      openAllLabel: 'Oldalak megnyitása egyszerre',
+      openAllDesc: 'Ha be van kapcsolva, a „Gyors megnyitás” gomb az összes irodát egyszerre nyitja meg új füleken.',
+      settingsHelpLabel: 'Segítség',
+      settingsHelpDesc: 'Ha az automatikus nyitás nem működik, olvasd el az útmutatót a Discordon.',
       odds1: 'Odds 1',
       odds2: 'Odds 2',
       totalStake: 'Teljes tét (Ft)',
@@ -462,6 +479,8 @@
       calculate: 'Számolás',
       calculateAria: 'Számolás indítása',
       loadError: 'Hiba történt a betöltéskor.',
+      validationNumbers: 'Kérjük, adjon meg érvényes számokat minden mezőben.',
+      validationOdds: 'Az oddsok legalább {min}-ek, a tét pedig legyen nagyobb 0-nál.',
       resultIf1: 'Eredmény, ha az 1-es nyer:',
       resultIf2: 'Eredmény, ha a 2-es nyer:',
       resultIfBookWins: 'Eredmény, ha a(z) {book} nyer:',
@@ -472,11 +491,24 @@
       helpNote: 'Elakadtál vagy nem értesz valamit? Nézd meg a rövid útmutatót.',
       helpGuide: 'Útmutató',
       popupBlockedTitle: 'Automatikus nyitás blokkolva',
-      popupBlockedText: 'Ha nem működik az automatikus megnyitás, nézd meg a rövid útmutatót.'
+      popupBlockedText: 'Ha nem működik az automatikus megnyitás, nézd meg a rövid útmutatót.',
+      copyStakeAria: 'Tét másolása',
+      swapCurrencyAlt: 'Deviza váltás',
+      swapCurrencyTitle: 'Deviza váltás (HUF ⇄ EUR)',
+      matchAria: 'Mérkőzés'
     },
     rs: {
       pageTitle: 'Arbitražni Kalkulator – Dark Mode',
       appTitle: 'Arbitražni Kalkulator',
+      calculatorAria: 'Arbitražni kalkulator',
+      settingsAria: 'Podešavanja',
+      settingsTitle: 'Podešavanja',
+      autoOpenLabel: 'Automatsko otvaranje kladionica',
+      autoOpenDesc: 'Pri učitavanju otvara linkovane kladionice u novim karticama.',
+      openAllLabel: 'Otvori sve stranice odjednom',
+      openAllDesc: 'Ako je uključeno, „Brzo otvaranje” otvara sve kladionice odjednom u novim karticama.',
+      settingsHelpLabel: 'Pomoć',
+      settingsHelpDesc: 'Ako automatsko otvaranje ne radi, pogledaj vodič na Discord-u.',
       odds1: 'Kvota 1',
       odds2: 'Kvota 2',
       totalStake: 'Ukupan ulog (Ft)',
@@ -484,6 +516,8 @@
       calculate: 'Izračunaj',
       calculateAria: 'Pokreni računanje',
       loadError: 'Došlo je do greške pri učitavanju.',
+      validationNumbers: 'Unesite važeće brojeve u sva polja.',
+      validationOdds: 'Kvota mora biti najmanje {min}, a ulog veći od 0.',
       resultIf1: 'Rezultat ako pobedi 1:',
       resultIf2: 'Rezultat ako pobedi 2:',
       resultIfBookWins: 'Rezultat ako pobedi {book}:',
@@ -494,11 +528,24 @@
       helpNote: 'Zapeo si ili ti nešto nije jasno? Pogledaj kratko uputstvo.',
       helpGuide: 'Uputstvo',
       popupBlockedTitle: 'Automatsko otvaranje je blokirano',
-      popupBlockedText: 'Ako automatsko otvaranje ne radi, pogledaj kratko uputstvo.'
+      popupBlockedText: 'Ako automatsko otvaranje ne radi, pogledaj kratko uputstvo.',
+      copyStakeAria: 'Kopiraj ulog',
+      swapCurrencyAlt: 'Promena valute',
+      swapCurrencyTitle: 'Promena valute (HUF ⇄ EUR)',
+      matchAria: 'Meč'
     },
     ro: {
       pageTitle: 'Calculator Arbitraj – Dark Mode',
       appTitle: 'Calculator Arbitraj',
+      calculatorAria: 'Calculator arbitraj',
+      settingsAria: 'Setări',
+      settingsTitle: 'Setări',
+      autoOpenLabel: 'Deschidere automată case pariuri',
+      autoOpenDesc: 'La încărcare deschide casele de pariuri asociate în file noi.',
+      openAllLabel: 'Deschide toate paginile simultan',
+      openAllDesc: 'Dacă este activat, butonul „Deschidere rapidă” deschide toate casele în file noi.',
+      settingsHelpLabel: 'Ajutor',
+      settingsHelpDesc: 'Dacă deschiderea automată nu funcționează, citește ghidul pe Discord.',
       odds1: 'Cotă 1',
       odds2: 'Cotă 2',
       totalStake: 'Miză totală (Ft)',
@@ -506,6 +553,8 @@
       calculate: 'Calculează',
       calculateAria: 'Pornește calculul',
       loadError: 'A apărut o eroare la încărcare.',
+      validationNumbers: 'Te rugăm să introduci numere valide în toate câmpurile.',
+      validationOdds: 'Cotele trebuie să fie cel puțin {min}, iar miza mai mare decât 0.',
       resultIf1: 'Rezultat dacă iese 1:',
       resultIf2: 'Rezultat dacă iese 2:',
       resultIfBookWins: 'Rezultat dacă câștigă {book}:',
@@ -516,16 +565,58 @@
       helpNote: 'Te-ai blocat sau nu înțelegi ceva? Vezi ghidul scurt.',
       helpGuide: 'Ghid',
       popupBlockedTitle: 'Deschiderea automată este blocată',
-      popupBlockedText: 'Dacă deschiderea automată nu funcționează, vezi ghidul scurt.'
+      popupBlockedText: 'Dacă deschiderea automată nu funcționează, vezi ghidul scurt.',
+      copyStakeAria: 'Copiază miza',
+      swapCurrencyAlt: 'Schimbare valută',
+      swapCurrencyTitle: 'Schimbare valută (HUF ⇄ EUR)',
+      matchAria: 'Meci'
+    },
+    sk: {
+      pageTitle: 'Arbitrážna Kalkulačka – Tmavý Režim',
+      appTitle: 'Arbitrážna Kalkulačka',
+      calculatorAria: 'Arbitrážna kalkulačka',
+      settingsAria: 'Nastavenia',
+      settingsTitle: 'Nastavenia',
+      autoOpenLabel: 'Automatické otváranie stávkových kancelárií',
+      autoOpenDesc: 'Pri načítaní otvorí prepojené stávkové kancelárie v nových kartách.',
+      openAllLabel: 'Otvoriť všetky stránky naraz',
+      openAllDesc: 'Ak je zapnuté, tlačidlo „Rýchle otvorenie” otvorí všetky kancelárie naraz v nových kartách.',
+      settingsHelpLabel: 'Pomoc',
+      settingsHelpDesc: 'Ak automatické otváranie nefunguje, pozri si návod na Discorde.',
+      odds1: 'Kurz 1',
+      odds2: 'Kurz 2',
+      totalStake: 'Celkový vklad (EUR)',
+      stakeWord: 'vklad',
+      calculate: 'Vypočítať',
+      calculateAria: 'Spustiť výpočet',
+      loadError: 'Pri načítaní nastala chyba.',
+      validationNumbers: 'Zadajte platné čísla do všetkých polí.',
+      validationOdds: 'Kurzy musia byť aspoň {min} a vklad musí byť väčší ako 0.',
+      resultIf1: 'Výsledok, ak vyhrá 1:',
+      resultIf2: 'Výsledok, ak vyhrá 2:',
+      resultIfBookWins: 'Výsledok, ak vyhrá {book}:',
+      guaranteedProfit: 'Garantovaný zisk:',
+      helpTitle: 'Pomoc',
+      helpNoAccount: 'Nemáš účet v stávkových kanceláriách?',
+      helpRegister: 'Zaregistruj sa tu',
+      helpNote: 'Zasekol si sa alebo niečomu nerozumieš? Pozri si krátky návod.',
+      helpGuide: 'Návod',
+      popupBlockedTitle: 'Automatické otvorenie bolo zablokované',
+      popupBlockedText: 'Ak automatické otvorenie nefunguje, pozri si krátky návod.',
+      copyStakeAria: 'Kopírovať vklad',
+      swapCurrencyAlt: 'Prepnutie meny',
+      swapCurrencyTitle: 'Prepnutie meny (HUF ⇄ EUR)',
+      matchAria: 'Zápas'
     }
   };
   function detectLang() {
     const search = new URLSearchParams(window.location.search);
     const q = (search.get('lang') || '').toLowerCase();
-    if (q === 'rs' || q === 'ro') return q;
+    if (q === 'rs' || q === 'ro' || q === 'sk') return q;
     const path = String(window.location.pathname || '').toLowerCase().replace(/\/+$/, '');
     if (path.endsWith('/rs')) return 'rs';
     if (path.endsWith('/ro')) return 'ro';
+    if (path.endsWith('/sk')) return 'sk';
     return 'hu';
   }
   let currentLang = detectLang();
@@ -534,11 +625,49 @@
     // A HTML lang attribútumában szerbhez az ISO-kód: "sr"
     document.documentElement.lang = currentLang === 'rs' ? 'sr' : currentLang;
     document.title = t('pageTitle');
+    const calcRoot = document.getElementById('calculatorRoot');
+    if (calcRoot) calcRoot.setAttribute('aria-label', t('calculatorAria'));
+    const settingsBtn = document.getElementById('settingsBtn');
+    if (settingsBtn) settingsBtn.setAttribute('aria-label', t('settingsAria'));
+    const settingsBtnIcon = document.getElementById('settingsBtnIcon');
+    if (settingsBtnIcon) settingsBtnIcon.setAttribute('alt', t('settingsAria'));
+    const settingsTitle = document.getElementById('settingsTitle');
+    if (settingsTitle) settingsTitle.textContent = t('settingsTitle');
+    const autoOpenLabel = document.getElementById('autoOpenLabel');
+    if (autoOpenLabel) autoOpenLabel.textContent = t('autoOpenLabel');
+    const autoOpenDesc = document.getElementById('autoOpenDesc');
+    if (autoOpenDesc) autoOpenDesc.textContent = t('autoOpenDesc');
+    const openAllLabel = document.getElementById('openAllLabel');
+    if (openAllLabel) openAllLabel.textContent = t('openAllLabel');
+    const openAllDesc = document.getElementById('openAllDesc');
+    if (openAllDesc) openAllDesc.textContent = t('openAllDesc');
+    const settingsHelpLabel = document.getElementById('settingsHelpLabel');
+    if (settingsHelpLabel) settingsHelpLabel.textContent = t('settingsHelpLabel');
+    const settingsHelpDesc = document.getElementById('settingsHelpDesc');
+    if (settingsHelpDesc) settingsHelpDesc.textContent = t('settingsHelpDesc');
+    const guideLink = document.getElementById('guideLink');
+    if (guideLink) {
+      guideLink.textContent = t('helpGuide');
+      guideLink.setAttribute('title', t('helpGuide'));
+    }
     const h1 = document.querySelector('h1'); if (h1) h1.textContent = t('appTitle');
     labelOdds1.textContent = t('odds1');
     labelOdds2.textContent = t('odds2');
     const stakeLabel = document.querySelector('label[for="stake"]');
     if (stakeLabel) stakeLabel.textContent = t('totalStake');
+    if (stakeField) {
+      const hasStakeParam = (new URLSearchParams(window.location.search)).has('stake');
+      if (currentLang === 'sk') {
+        stakeField.step = '0.1';
+        stakeField.min = '0.1';
+        stakeField.placeholder = 'pl. 100';
+        if (!hasStakeParam) stakeField.value = '100';
+      } else {
+        stakeField.step = '1';
+        stakeField.min = '1';
+        stakeField.placeholder = 'pl. 10000';
+      }
+    }
     calcButton.textContent = t('calculate');
     calcButton.setAttribute('aria-label', t('calculateAria'));
     const helpBtn = document.getElementById('helpBtn');
@@ -623,7 +752,7 @@
       const pill = document.createElement('div');
       pill.className = 'match-pill';
       pill.id = 'matchPill';
-      pill.setAttribute('aria-label', 'Mérkőzés');
+      pill.setAttribute('aria-label', t('matchAria'));
       pill.title = matchName;
       pill.innerHTML = `<span class="dot" aria-hidden="true"></span><span class="text"></span>`;
 
@@ -672,10 +801,26 @@
   let isFocusedS1 = false;
   let isFocusedS2 = false;
 
-  const localModeForLang = () => (currentLang === 'ro' ? 'RON' : (currentLang === 'rs' ? 'RSD' : 'HUF')); // hu/default -> HUF
+  const localModeForLang = () => (currentLang === 'sk' ? 'EUR' : (currentLang === 'ro' ? 'RON' : (currentLang === 'rs' ? 'RSD' : 'HUF')));
   const isLocalMode = m => (m === 'RON' || m === 'RSD');
   const localRateForMode = m => (m === 'RON' ? ronRate : (m === 'RSD' ? rsdRate : 1));
   const labelFor = m => (m === 'EUR' ? 'EUR' : (m === 'RON' ? 'RON' : (m === 'RSD' ? 'RSD' : 'Ft')));
+  const stakeInputToHUF = () => {
+    const totalStake = parseFloat(stakeField.value.replace(',', '.'));
+    if (!Number.isFinite(totalStake)) return NaN;
+    return currentLang === 'sk' ? (totalStake * eurRate) : totalStake;
+  };
+  const setStakeInputFromHUF = (hufValue) => {
+    if (currentLang === 'sk') {
+      const eurValue = hufToDisplay(hufValue, 'EUR');
+      stakeField.value = Number.isFinite(eurValue)
+        ? (Math.round(eurValue * 100) / 100).toFixed(2)
+        : '';
+      return;
+    }
+    const huf = Number(hufValue);
+    stakeField.value = Number.isFinite(huf) ? Math.round(huf).toString() : '';
+  };
 
   // BETÖLTÉSKOR
   window.addEventListener('DOMContentLoaded', () => {
@@ -779,6 +924,23 @@
     const sanitized = override ? sanitizeUrl(override) : null;
     return sanitized || defaultUrl;
   }
+  function resolveDynamicBookmaker(keyRaw) {
+    const raw = String(keyRaw || '').trim();
+    if (!raw) return null;
+    const key = raw.toLowerCase();
+    const predefined = bookmakers[key];
+    if (predefined) {
+      return {
+        key,
+        label: predefined.label,
+        url: resolveBookmakerUrl(key, predefined.url)
+      };
+    }
+    const dynamicUrl = resolveBookmakerUrl(raw, null);
+    if (!dynamicUrl) return null;
+    const dynamicLabel = getCaseInsensitiveParam(`${raw}label`) || raw;
+    return { key, label: dynamicLabel, url: dynamicUrl };
+  }
   function parseNum(el) { return Number(String(el.value).replace(',', '.')); }
 
   function applyURLParamsToFields() {
@@ -795,12 +957,17 @@
     if (!isNaN(o2) && o2 >= 1.01) odds2Field.value = o2.toFixed(2);
 
     const t = parseFloat(params.get('stake'));
-    if (!isNaN(t) && t > 0) stakeField.value = t.toFixed(0);
+    if (!isNaN(t) && t > 0) stakeField.value = currentLang === 'sk' ? t.toFixed(2) : t.toFixed(0);
 
     showBookmakerButtons();
   }
 
   function autoSetCurrencyModesFromBooks(){
+     if (currentLang === 'sk') {
+       stakeMode1 = 'EUR';
+       stakeMode2 = 'EUR';
+       return;
+     }
      const eurBooks = new Set(['betinasia','blaze','blaze.bet.br']);
      const ronBooks = new Set(['favbet','fortuna','unibet','superbet','betano']);
 
@@ -833,13 +1000,10 @@
       const odds2Book = _getBookVal("odds2Book");
 
       [odds1Book, odds2Book].filter(Boolean).forEach(keyRaw => {
-        const key = String(keyRaw).toLowerCase();
-        const bm  = bookmakers[key];
-        if (!bm || seen.has(key)) return;
-
-        const url = resolveBookmakerUrl(key, bm.url);
-        books.push({ key, label: bm.label, url });
-        seen.add(key);
+        const bm = resolveDynamicBookmaker(keyRaw);
+        if (!bm || seen.has(bm.key)) return;
+        books.push(bm);
+        seen.add(bm.key);
       });
 
       // Gyors megnyitás gomb ideiglenesen kikapcsolva.
@@ -871,7 +1035,7 @@
 
     if (Number.isFinite(o1) && o1 >= 1.01) params.set('odds1', o1.toFixed(2));
     if (Number.isFinite(o2) && o2 >= 1.01) params.set('odds2', o2.toFixed(2));
-    if (Number.isFinite(t)  && t > 0)      params.set('stake', t.toFixed(0));
+    if (Number.isFinite(t)  && t > 0)      params.set('stake', currentLang === 'sk' ? t.toFixed(2) : t.toFixed(0));
 
     history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
   }
@@ -926,17 +1090,17 @@
 
     const odds1      = parseFloat(odds1Field.value.replace(',', '.'));
     const odds2      = parseFloat(odds2Field.value.replace(',', '.'));
-    const totalStake = parseFloat(stakeField.value.replace(',', '.')); // HUF
+    const totalStake = stakeInputToHUF(); // sk: EUR -> HUF, egyébként HUF
 
     resultDiv.innerHTML = '';
     errorDiv.textContent = '';
 
     if (isNaN(odds1) || isNaN(odds2) || isNaN(totalStake)) {
-      errorDiv.textContent = 'Kérjük, adjon meg érvényes számokat minden mezőben.';
+      errorDiv.textContent = t('validationNumbers');
       return;
     }
     if (odds1 < MIN_ODDS || odds2 < MIN_ODDS || totalStake <= 0) {
-      errorDiv.textContent = `Az oddsok legalább ${MIN_ODDS.toFixed(2)}-ek, a tét pedig legyen nagyobb 0-nál.`;
+      errorDiv.textContent = t('validationOdds').replace('{min}', MIN_ODDS.toFixed(2));
       return;
     }
 
@@ -952,7 +1116,7 @@
       isUpdating = true;
       writeDisplayStake(stake1Input, initialStake1HUF, stakeMode1);
       writeDisplayStake(stake2Input, initialStake2HUF, stakeMode2);
-      stakeField.value  = Math.round(initialStake1HUF + initialStake2HUF).toString();
+      setStakeInputFromHUF(initialStake1HUF + initialStake2HUF);
       isUpdating = false;
       updateStakeAltDisplays();
       syncInputSteps();
@@ -1042,7 +1206,7 @@
     isUpdating = true;
     writeDisplayStake(stake1Input, rs1HUF, stakeMode1);
     writeDisplayStake(stake2Input, rs2HUF, stakeMode2);
-    stakeField.value  = String(rs1HUF + rs2HUF);
+    setStakeInputFromHUF(rs1HUF + rs2HUF);
     isUpdating = false;
     updateProfits(o1, o2);
     updateStakeAltDisplays();
@@ -1101,7 +1265,7 @@
 
     isUpdating = true;
     writeDisplayStake(stake2Input, rs2HUF, stakeMode2);
-    stakeField.value  = String(Math.round(s1HUF + rs2HUF));
+    setStakeInputFromHUF(s1HUF + rs2HUF);
     isUpdating = false;
 
     updateProfits(odds1, odds2);
@@ -1122,7 +1286,7 @@
 
     isUpdating = true;
     writeDisplayStake(stake1Input, rs1HUF, stakeMode1);
-    stakeField.value  = String(Math.round(rs1HUF + s2HUF));
+    setStakeInputFromHUF(rs1HUF + s2HUF);
     isUpdating = false;
 
     updateProfits(odds1, odds2);
@@ -1145,19 +1309,23 @@
     const p2pct = totalInvested > 0 ? (profit2 / totalInvested) * 100 : 0;
     const guaranteedPercent = totalInvested > 0 ? (guaranteed / totalInvested) * 100 : 0;
 
-    const nfFt = new Intl.NumberFormat('hu-HU');
-
-    const profitMode = currentLang === 'ro'
-      ? 'RON'
-      : (currentLang === 'rs' ? 'RSD' : ((stakeMode1 === stakeMode2 && isLocalMode(stakeMode1)) ? stakeMode1 : null));
-    const localCurrencyLabel = profitMode || 'Ft';
+    const profitMode = currentLang === 'sk'
+      ? 'EUR'
+      : (currentLang === 'ro'
+        ? 'RON'
+        : (currentLang === 'rs' ? 'RSD' : ((stakeMode1 === stakeMode2 && isLocalMode(stakeMode1)) ? stakeMode1 : null)));
+    const localCurrencyLabel = profitMode === 'EUR' ? 'EUR' : (profitMode || 'Ft');
     const formatProfit = (amtHUF) => {
       if (!Number.isFinite(amtHUF)) return `- ${localCurrencyLabel}`;
+      if (profitMode === 'EUR') {
+        const eurValue = amtHUF / eurRate;
+        return `${eurValue.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR`;
+      }
       if (profitMode) {
         const local = Math.round(amtHUF / localRateForMode(profitMode));
         return `${local.toLocaleString('hu-HU')} ${localCurrencyLabel}`;
       }
-      return `${nfFt.format(Math.round(amtHUF))} Ft`;
+      return `${Math.round(amtHUF).toLocaleString('hu-HU')} Ft`;
     };
 
     const p1El = document.getElementById('profit1Value');
@@ -1195,7 +1363,7 @@
       else                                        gv.classList.add('is-zero');
     }
 
-    stakeField.value = String(Math.round(totalInvested));
+    setStakeInputFromHUF(totalInvested);
   }
 
   function resultLabelForBook(bookKey, fallbackKey) {
@@ -1216,44 +1384,46 @@
     if (!stake1Input || !stake2Input) return;
     const odds1 = parseFloat(odds1Field.value.replace(',', '.'));
     const odds2 = parseFloat(odds2Field.value.replace(',', '.'));
-
     const [s1HUF, s2HUF] = getDisplayStakesHUF(odds1, odds2);
-
     const s1AltEl = document.getElementById('stake1Alt');
     const s2AltEl = document.getElementById('stake2Alt');
-
-    const localMode = localModeForLang();
-    const onlyLocalAndEur = (currentLang === 'ro' || currentLang === 'rs');
-    if (onlyLocalAndEur) {
-      if (stakeMode1 === 'EUR') {
-        const local1 = Number.isFinite(s1HUF) ? Math.round(s1HUF / localRateForMode(localMode)) : null;
-        if (s1AltEl){ s1AltEl.className = 'ft-value'; s1AltEl.textContent = local1 != null ? `= ${local1.toLocaleString('hu-HU')} ${labelFor(localMode)}` : ''; }
+    if (currentLang === 'sk') {
+      if (s1AltEl) s1AltEl.textContent = '';
+      if (s2AltEl) s2AltEl.textContent = '';
+    } else {
+      const localMode = localModeForLang();
+      const onlyLocalAndEur = (currentLang === 'ro' || currentLang === 'rs');
+      if (onlyLocalAndEur) {
+        if (stakeMode1 === 'EUR') {
+          const local1 = Number.isFinite(s1HUF) ? Math.round(s1HUF / localRateForMode(localMode)) : null;
+          if (s1AltEl){ s1AltEl.className = 'ft-value'; s1AltEl.textContent = local1 != null ? `= ${local1.toLocaleString('hu-HU')} ${labelFor(localMode)}` : ''; }
+        } else {
+          const eur1 = Number.isFinite(s1HUF) ? roundToTenthEUR(s1HUF / eurRate) : null;
+          if (s1AltEl){ s1AltEl.className = 'eur-value'; s1AltEl.textContent = eur1 != null ? `= ${eur1.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR` : ''; }
+        }
+      } else if (stakeMode1 === 'EUR' || isLocalMode(stakeMode1)) {
+        const ft1 = Number.isFinite(s1HUF) ? s1HUF : null;
+        if (s1AltEl){ s1AltEl.className = 'ft-value'; s1AltEl.textContent = ft1 != null ? `= ${ft1.toLocaleString('hu-HU')} Ft` : ''; }
       } else {
         const eur1 = Number.isFinite(s1HUF) ? roundToTenthEUR(s1HUF / eurRate) : null;
         if (s1AltEl){ s1AltEl.className = 'eur-value'; s1AltEl.textContent = eur1 != null ? `= ${eur1.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR` : ''; }
       }
-    } else if (stakeMode1 === 'EUR' || isLocalMode(stakeMode1)) {
-      const ft1 = Number.isFinite(s1HUF) ? s1HUF : null;
-      if (s1AltEl){ s1AltEl.className = 'ft-value'; s1AltEl.textContent = ft1 != null ? `= ${ft1.toLocaleString('hu-HU')} Ft` : ''; }
-    } else {
-      const eur1 = Number.isFinite(s1HUF) ? roundToTenthEUR(s1HUF / eurRate) : null;
-      if (s1AltEl){ s1AltEl.className = 'eur-value'; s1AltEl.textContent = eur1 != null ? `= ${eur1.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR` : ''; }
-    }
 
-    if (onlyLocalAndEur) {
-      if (stakeMode2 === 'EUR') {
-        const local2 = Number.isFinite(s2HUF) ? Math.round(s2HUF / localRateForMode(localMode)) : null;
-        if (s2AltEl){ s2AltEl.className = 'ft-value'; s2AltEl.textContent = local2 != null ? `= ${local2.toLocaleString('hu-HU')} ${labelFor(localMode)}` : ''; }
+      if (onlyLocalAndEur) {
+        if (stakeMode2 === 'EUR') {
+          const local2 = Number.isFinite(s2HUF) ? Math.round(s2HUF / localRateForMode(localMode)) : null;
+          if (s2AltEl){ s2AltEl.className = 'ft-value'; s2AltEl.textContent = local2 != null ? `= ${local2.toLocaleString('hu-HU')} ${labelFor(localMode)}` : ''; }
+        } else {
+          const eur2 = Number.isFinite(s2HUF) ? roundToTenthEUR(s2HUF / eurRate) : null;
+          if (s2AltEl){ s2AltEl.className = 'eur-value'; s2AltEl.textContent = eur2 != null ? `= ${eur2.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR` : ''; }
+        }
+      } else if (stakeMode2 === 'EUR' || isLocalMode(stakeMode2)) {
+        const ft2 = Number.isFinite(s2HUF) ? s2HUF : null;
+        if (s2AltEl){ s2AltEl.className = 'ft-value'; s2AltEl.textContent = ft2 != null ? `= ${ft2.toLocaleString('hu-HU')} Ft` : ''; }
       } else {
         const eur2 = Number.isFinite(s2HUF) ? roundToTenthEUR(s2HUF / eurRate) : null;
         if (s2AltEl){ s2AltEl.className = 'eur-value'; s2AltEl.textContent = eur2 != null ? `= ${eur2.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR` : ''; }
       }
-    } else if (stakeMode2 === 'EUR' || isLocalMode(stakeMode2)) {
-      const ft2 = Number.isFinite(s2HUF) ? s2HUF : null;
-      if (s2AltEl){ s2AltEl.className = 'ft-value'; s2AltEl.textContent = ft2 != null ? `= ${ft2.toLocaleString('hu-HU')} Ft` : ''; }
-    } else {
-      const eur2 = Number.isFinite(s2HUF) ? roundToTenthEUR(s2HUF / eurRate) : null;
-      if (s2AltEl){ s2AltEl.className = 'eur-value'; s2AltEl.textContent = eur2 != null ? `= ${eur2.toLocaleString('hu-HU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} EUR` : ''; }
     }
 
     const s1Label = document.getElementById('stake1Label');
@@ -1263,6 +1433,7 @@
   }
 
   function toggleStakeMode(which){
+    if (currentLang === 'sk') return;
     const odds1 = parseFloat(odds1Field.value.replace(',', '.'));
     const odds2 = parseFloat(odds2Field.value.replace(',', '.'));
 
@@ -1525,7 +1696,7 @@
     const copyBtn1 = document.createElement('button');
     copyBtn1.type = 'button';
     copyBtn1.className = 'copy-btn';
-    copyBtn1.setAttribute('aria-label', 'Tét másolása');
+    copyBtn1.setAttribute('aria-label', t('copyStakeAria'));
     copyBtn1.textContent = '📋';
 
     stake1Input = document.createElement('input');
@@ -1577,9 +1748,10 @@
 
     const swapInline1 = document.createElement('img');
     swapInline1.src = 'icon8-refresh.png';
-    swapInline1.alt = 'Deviza váltás';
-    swapInline1.title = 'Deviza váltás (HUF ⇄ EUR)';
+    swapInline1.alt = t('swapCurrencyAlt');
+    swapInline1.title = t('swapCurrencyTitle');
     swapInline1.className = 'swap-emoji-inline';
+    swapInline1.style.display = currentLang === 'sk' ? 'none' : '';
     swapInline1.addEventListener('click', () => toggleStakeMode(1));
 
     stake1AltWrap.appendChild(stake1Alt);
@@ -1620,7 +1792,7 @@
     const copyBtn2 = document.createElement('button');
     copyBtn2.type = 'button';
     copyBtn2.className = 'copy-btn';
-    copyBtn2.setAttribute('aria-label', 'Tét másolása');
+    copyBtn2.setAttribute('aria-label', t('copyStakeAria'));
     copyBtn2.textContent = '📋';
 
     stake2Input = document.createElement('input');
@@ -1672,9 +1844,10 @@
 
     const swapInline2 = document.createElement('img');
     swapInline2.src = 'icon8-refresh.png';
-    swapInline2.alt = 'Deviza váltás';
-    swapInline2.title = 'Deviza váltás (HUF ⇄ EUR)';
+    swapInline2.alt = t('swapCurrencyAlt');
+    swapInline2.title = t('swapCurrencyTitle');
     swapInline2.className = 'swap-emoji-inline';
+    swapInline2.style.display = currentLang === 'sk' ? 'none' : '';
     swapInline2.addEventListener('click', () => toggleStakeMode(2));
 
     stake2AltWrap.appendChild(stake2Alt);
