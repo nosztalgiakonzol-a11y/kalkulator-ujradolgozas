@@ -918,6 +918,23 @@
     const sanitized = override ? sanitizeUrl(override) : null;
     return sanitized || defaultUrl;
   }
+  function resolveDynamicBookmaker(keyRaw) {
+    const raw = String(keyRaw || '').trim();
+    if (!raw) return null;
+    const key = raw.toLowerCase();
+    const predefined = bookmakers[key];
+    if (predefined) {
+      return {
+        key,
+        label: predefined.label,
+        url: resolveBookmakerUrl(key, predefined.url)
+      };
+    }
+    const dynamicUrl = resolveBookmakerUrl(raw, null);
+    if (!dynamicUrl) return null;
+    const dynamicLabel = getCaseInsensitiveParam(`${raw}label`) || raw;
+    return { key, label: dynamicLabel, url: dynamicUrl };
+  }
   function parseNum(el) { return Number(String(el.value).replace(',', '.')); }
 
   function applyURLParamsToFields() {
@@ -977,13 +994,10 @@
       const odds2Book = _getBookVal("odds2Book");
 
       [odds1Book, odds2Book].filter(Boolean).forEach(keyRaw => {
-        const key = String(keyRaw).toLowerCase();
-        const bm  = bookmakers[key];
-        if (!bm || seen.has(key)) return;
-
-        const url = resolveBookmakerUrl(key, bm.url);
-        books.push({ key, label: bm.label, url });
-        seen.add(key);
+        const bm = resolveDynamicBookmaker(keyRaw);
+        if (!bm || seen.has(bm.key)) return;
+        books.push(bm);
+        seen.add(bm.key);
       });
 
       // Gyors megnyitás gomb ideiglenesen kikapcsolva.
